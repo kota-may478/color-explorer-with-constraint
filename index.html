@@ -526,7 +526,19 @@ input[type=range]::-moz-range-thumb {
 .thr-hint.active { background: var(--ok-bg); color: var(--ok); border-color: rgba(26,134,114,.3); }
 
 /* ── Hue bar ── */
-.hue-bar { width: 100%; height: 14px; border-radius: 7px; margin-bottom: 8px; display: block; }
+.hue-bar { width: 100%; height: 14px; border-radius: 7px; display: block; }
+.hue-slider-stack {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.hue-btns-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.hue-btns-row input[type=range] { flex: 1; }
 
 /* ── Map ── */
 .map-outer {
@@ -774,12 +786,16 @@ footer a { color: var(--text3); }
   <!-- Step 1: Main H -->
   <div class="step-row"><span class="step-num">1</span><span class="step-title" id="step1Title"></span></div>
   <div class="card">
-    <canvas class="hue-bar" id="hueBarM" width="600" height="14"></canvas>
     <div class="slider-row">
       <label>H</label>
-      <button class="sb" id="bHm">&#8592;</button>
-      <input type="range" id="slH" min="0" max="360" value="168" step="1">
-      <button class="sb" id="bHp">&#8594;</button>
+      <div class="hue-slider-stack">
+        <canvas class="hue-bar" id="hueBarM" width="600" height="14"></canvas>
+        <div class="hue-btns-row">
+          <button class="sb" id="bHm">&#8592;</button>
+          <input type="range" id="slH" min="0" max="360" value="168" step="1">
+          <button class="sb" id="bHp">&#8594;</button>
+        </div>
+      </div>
       <span class="sval" id="vH">168</span>
       <button class="rb" id="rH" title="Reset">&#8635;</button>
     </div>
@@ -788,12 +804,16 @@ footer a { color: var(--text3); }
   <!-- Step 2: Accent H -->
   <div class="step-row"><span class="step-num">2</span><span class="step-title" id="step2Title"></span></div>
   <div class="card">
-    <canvas class="hue-bar" id="hueBarA" width="600" height="14"></canvas>
     <div class="slider-row">
       <label>H</label>
-      <button class="sb" id="bAHm">&#8592;</button>
-      <input type="range" id="slAH" min="0" max="360" value="348" step="1">
-      <button class="sb" id="bAHp">&#8594;</button>
+      <div class="hue-slider-stack">
+        <canvas class="hue-bar" id="hueBarA" width="600" height="14"></canvas>
+        <div class="hue-btns-row">
+          <button class="sb" id="bAHm">&#8592;</button>
+          <input type="range" id="slAH" min="0" max="360" value="348" step="1">
+          <button class="sb" id="bAHp">&#8594;</button>
+        </div>
+      </div>
       <span class="sval" id="vAH">348</span>
       <button class="rb" id="rAH" title="Reset">&#8635;</button>
       <button class="link-btn" id="setCompBtn"></button>
