@@ -562,6 +562,28 @@ canvas.map {
   height: auto;
   touch-action: none;
 }
+.map-wrap {
+  position: relative;
+  display: block;
+  line-height: 0;
+}
+.map-cursor-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.cursor-outer {
+  fill: rgba(255,255,255,0.92);
+  stroke: #1a1917;
+  stroke-width: 2;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,.4));
+}
+.cursor-inner {
+  fill: #1a1917;
+}
 .legend-row {
   display: flex;
   align-items: center;
@@ -793,14 +815,19 @@ footer a { color: var(--text3); }
       <div class="map-outer">
         <div class="axis-v"><span>V=100</span><span>V=50</span><span>V=0</span></div>
         <div class="axis-s"><span>S=0</span><span>S=100</span></div>
-        <canvas class="map" id="mapM" width="240" height="240"></canvas>
+        <div class="map-wrap">
+          <canvas class="map" id="mapM" width="240" height="240"></canvas>
+          <svg class="map-cursor-svg" id="cursorM" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+            <circle class="cursor-outer" id="cursorMOuter" cx="120" cy="120" r="8"/>
+            <circle class="cursor-inner" id="cursorMInner" cx="120" cy="120" r="3"/>
+          </svg>
+        </div>
       </div>
       <div class="legend-row">
         <div class="leg" style="background:var(--ok-mid)"></div><span id="legendMOk"></span>
         <div class="leg" style="background:#ddd;margin-left:8px;"></div><span id="legendNG1"></span>
       </div>
       <div class="stale-note" id="mainStale"></div>
-      <div class="map-hint-box" id="mapMHintBox"></div>
       <div class="card card-sm">
         <div class="slider-row">
           <label>S</label>
@@ -820,6 +847,7 @@ footer a { color: var(--text3); }
         <div class="swatch" id="swM"></div>
         <div class="hexlbl" id="hexM"></div>
       </div>
+      <div class="map-hint-box" id="mapMHintBox"></div>
     </div>
 
     <!-- Accent SV -->
@@ -833,7 +861,13 @@ footer a { color: var(--text3); }
       <div class="map-outer">
         <div class="axis-v"><span>V=100</span><span>V=50</span><span>V=0</span></div>
         <div class="axis-s"><span>S=0</span><span>S=100</span></div>
-        <canvas class="map" id="mapA" width="240" height="240"></canvas>
+        <div class="map-wrap">
+          <canvas class="map" id="mapA" width="240" height="240"></canvas>
+          <svg class="map-cursor-svg" id="cursorA" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+            <circle class="cursor-outer" id="cursorAOuter" cx="120" cy="120" r="8"/>
+            <circle class="cursor-inner" id="cursorAInner" cx="120" cy="120" r="3"/>
+          </svg>
+        </div>
       </div>
       <div class="legend-row">
         <div class="leg" style="background:var(--ok-mid)"></div><span id="legendAOk"></span>
@@ -1282,13 +1316,6 @@ function drawMap(canvasId, grid, res, curS, curV) {
     }
   }
   ctx.putImageData(img, 0, 0);
-  const cx = Math.round(curS / 100 * (CW - 1));
-  const cy = Math.round((1 - curV / 100) * (CH - 1));
-  ctx.beginPath(); ctx.arc(cx, cy, 8, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fill();
-  ctx.strokeStyle = '#1a1917'; ctx.lineWidth = 2; ctx.stroke();
-  ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI * 2);
-  ctx.fillStyle = '#1a1917'; ctx.fill();
 }
 
 function drawEmptyMap(canvasId, curS, curV) {
@@ -1296,11 +1323,16 @@ function drawEmptyMap(canvasId, curS, curV) {
   const ctx = canvas.getContext('2d');
   const CW = canvas.width, CH = canvas.height;
   ctx.fillStyle = '#eceae6'; ctx.fillRect(0, 0, CW, CH);
-  const cx = Math.round(curS / 100 * (CW - 1));
-  const cy = Math.round((1 - curV / 100) * (CH - 1));
-  ctx.beginPath(); ctx.arc(cx, cy, 8, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();
-  ctx.strokeStyle = '#888'; ctx.lineWidth = 2; ctx.stroke();
+}
+
+function updateCursor(mapId, s, v) {
+  const suffix = mapId === 'mapM' ? 'M' : 'A';
+  const cx = s / 100 * 239;
+  const cy = (1 - v / 100) * 239;
+  const outer = document.getElementById('cursor' + suffix + 'Outer');
+  const inner = document.getElementById('cursor' + suffix + 'Inner');
+  if (outer) { outer.setAttribute('cx', cx); outer.setAttribute('cy', cy); }
+  if (inner) { inner.setAttribute('cx', cx); inner.setAttribute('cy', cy); }
 }
 
 function drawHueBar(canvasId, selectedH) {
@@ -1338,6 +1370,7 @@ function updateAccentMap() {
     ? `<span class="ok-badge">OK ${pct}%</span>`
     : `<span class="ng-badge">${I18N[lang].okRegionNone}</span>`;
   drawMap('mapA', ra.grid, RES_A, gv('slAS'), gv('slAV'));
+  updateCursor('mapA', gv('slAS'), gv('slAV'));
 }
 
 function updateJudge() {
@@ -1414,6 +1447,7 @@ function update() {
   updateJudge();
   if (gridMData) drawMap('mapM', gridMData.grid, RES_M, gv('slMS'), gv('slMV'));
   else drawEmptyMap('mapM', gv('slMS'), gv('slMV'));
+  updateCursor('mapM', gv('slMS'), gv('slMV'));
 }
 
 // ── Calc button ──
@@ -1426,6 +1460,7 @@ document.getElementById('calcBtn').addEventListener('click', () => {
       ? `<span class="ok-badge">OK ${pct}%</span>`
       : `<span class="ng-badge">${I18N[lang].okRegionNone}</span>`;
     drawMap('mapM', gridMData.grid, RES_M, gv('slMS'), gv('slMV'));
+    updateCursor('mapM', gv('slMS'), gv('slMV'));
   });
 });
 
@@ -1604,6 +1639,7 @@ applyTheme();
 applyCustomBg();
 applyLang();
 drawEmptyMap('mapM', DEFS.MS, DEFS.MV);
+updateCursor('mapM', DEFS.MS, DEFS.MV);
 update();
 </script>
 </body>
