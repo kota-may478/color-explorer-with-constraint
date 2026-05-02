@@ -10,7 +10,7 @@
 
 A browser-based tool to visually explore color palettes that satisfy WCAG contrast ratio and color vision simulation constraints on the S-V map.
 
-🔗 **[Live Demo](https://kota-may478.github.io/color-explorer-with-constraint/)**
+🔗 **[Live Demo](https://kota-may478.github.io/color-explorer-with-constraint/?lang=en)**
 
 ---
 
@@ -76,7 +76,7 @@ MIT
 
 WCAG コントラスト比・色覚シミュレーションの制約条件を満たすカラーパレットを、S-V マップ上で視覚的に探索できるブラウザツールです。
 
-🔗 **[ライブデモ](https://kota-may478.github.io/color-explorer-with-constraint/)**
+🔗 **[ライブデモ](https://kota-may478.github.io/color-explorer-with-constraint/?lang=ja)**
 
 ---
 

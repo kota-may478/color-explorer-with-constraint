@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Color Constraint Explorer — アクセシブルな配色設計ツール</title>
-<meta name="description" content="WCAG・色覚シミュレーションの制約条件を満たすカラーパレットを視覚的に探索できる設計支援ツール">
+<title>Color Explorer with Constraint</title>
+<meta name="description" content="Visually explore color palettes satisfying WCAG contrast and color vision simulation constraints on the S-V map.">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
 
@@ -32,6 +32,26 @@
   --sans: 'Zen Kaku Gothic New', sans-serif;
 }
 
+/* ── Dark mode ── */
+body.dark {
+  --bg: #18181b;
+  --surface: #27272a;
+  --surface2: #3f3f46;
+  --surface3: #52525b;
+  --border: rgba(255,255,255,0.10);
+  --border2: rgba(255,255,255,0.06);
+  --text: #f4f4f5;
+  --text2: #a1a1aa;
+  --text3: #71717a;
+  --ok: #4ade80;
+  --ok-bg: #14532d;
+  --ok-mid: #22c55e;
+  --warn: #fbbf24;
+  --warn-bg: #713f12;
+  --fail: #f87171;
+  --fail-bg: #7f1d1d;
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -40,13 +60,14 @@ body {
   color: var(--text);
   min-height: 100vh;
   line-height: 1.6;
+  transition: background 0.2s, color 0.2s;
 }
 
 /* ── Header ── */
 header {
   border-bottom: 1px solid var(--border);
   background: var(--surface);
-  padding: 0 2rem;
+  padding: 0 1.5rem;
   height: 56px;
   display: flex;
   align-items: center;
@@ -54,6 +75,7 @@ header {
   position: sticky;
   top: 0;
   z-index: 100;
+  gap: 10px;
 }
 .logo {
   font-family: var(--mono);
@@ -64,11 +86,18 @@ header {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 .logo-dot {
   width: 10px; height: 10px;
   border-radius: 50%;
   background: var(--ok-mid);
+  flex-shrink: 0;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex-shrink: 0;
 }
 .header-tag {
@@ -79,6 +108,139 @@ header {
   border-radius: 20px;
   padding: 2px 10px;
 }
+.icon-btn {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text2);
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.1s, color 0.1s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.icon-btn:hover { background: var(--surface3); color: var(--text); }
+.icon-btn:active { transform: scale(.92); }
+.lang-btn {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text2);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+}
+.lang-btn:hover { background: var(--surface3); color: var(--text); }
+
+/* ── Settings panel ── */
+.settings-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 200;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+.settings-overlay.open { display: flex; }
+.settings-panel {
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  width: 300px;
+  max-width: 92vw;
+  height: 100%;
+  padding: 1.5rem 1.25rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.settings-panel h2 {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.settings-panel h2 button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--text3);
+  line-height: 1;
+}
+.settings-panel h2 button:hover { color: var(--text); }
+.settings-section-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 8px;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.settings-row:last-child { margin-bottom: 0; }
+.settings-row label {
+  font-size: 12px;
+  color: var(--text2);
+  flex: 1;
+}
+.color-picker-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.color-picker-wrap input[type=color] {
+  width: 32px; height: 28px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  cursor: pointer;
+}
+.color-picker-wrap .hex-input {
+  font-family: var(--mono);
+  font-size: 11px;
+  width: 80px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  color: var(--text);
+  outline: none;
+}
+.color-picker-wrap .hex-input:focus { border-color: var(--ok-mid); }
+.reset-colors-btn {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text2);
+  cursor: pointer;
+  width: 100%;
+}
+.reset-colors-btn:hover { background: var(--surface3); color: var(--text); }
 
 /* ── Layout ── */
 .container {
@@ -413,6 +575,21 @@ canvas.map {
 .map-note { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-bottom: 5px; }
 .stale-note { font-family: var(--mono); font-size: 10px; color: var(--warn); margin-top: 4px; min-height: 15px; }
 
+/* ── Map hint box ── */
+.map-hint-box {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text2);
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  margin-top: 6px;
+  line-height: 1.7;
+  white-space: pre-line;
+}
+.map-hint-box.hidden { display: none; }
+
 /* ── Swatch ── */
 .swatch {
   width: 100%;
@@ -479,49 +656,101 @@ footer {
   border-top: 1px solid var(--border2);
 }
 footer a { color: var(--text3); }
-</style>
 </head>
 <body>
+
+<!-- ── Settings panel ── -->
+<div class="settings-overlay" id="settingsOverlay">
+  <div class="settings-panel" id="settingsPanel">
+    <h2 id="settingsTitle">Settings <button id="closeSettings">&#x2715;</button></h2>
+
+    <div>
+      <div class="settings-section-title" id="settingsThemeLabel">Theme</div>
+      <div class="settings-row">
+        <label id="settingsDarkModeLabel">Dark mode</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="darkToggle" style="width:16px;height:16px;accent-color:var(--ok-mid);cursor:pointer;">
+        </label>
+      </div>
+    </div>
+
+    <div>
+      <div class="settings-section-title" id="settingsBgLabel">Background colors</div>
+      <div class="settings-row">
+        <label id="settingsLightBgLabel">Light mode bg</label>
+        <div class="color-picker-wrap">
+          <input type="color" id="lightBgPicker" value="#f7f6f3">
+          <input type="text" class="hex-input" id="lightBgHex" value="#f7f6f3" maxlength="7">
+        </div>
+      </div>
+      <div class="settings-row">
+        <label id="settingsDarkBgLabel">Dark mode bg</label>
+        <div class="color-picker-wrap">
+          <input type="color" id="darkBgPicker" value="#18181b">
+          <input type="text" class="hex-input" id="darkBgHex" value="#18181b" maxlength="7">
+        </div>
+      </div>
+      <button class="reset-colors-btn" id="resetColorsBtn" style="margin-top:4px;">Reset to defaults</button>
+    </div>
+
+    <div>
+      <div class="settings-section-title" id="settingsLangLabel">Language</div>
+      <div class="settings-row">
+        <label>English</label>
+        <button class="lang-btn" id="settingsLangEn">EN</button>
+      </div>
+      <div class="settings-row">
+        <label>日本語</label>
+        <button class="lang-btn" id="settingsLangJa">JA</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <header>
   <div class="logo">
     <div class="logo-dot"></div>
-    Color Constraint Explorer
+    Color Explorer with Constraint
   </div>
-  <span class="header-tag">v1.0</span>
+  <div class="header-right">
+    <button class="lang-btn" id="headerLangBtn" title="Switch language">EN / JA</button>
+    <button class="icon-btn" id="darkModeBtn" title="Toggle dark mode">&#9790;</button>
+    <button class="icon-btn" id="settingsBtn" title="Settings">&#9881;</button>
+    <span class="header-tag">v1.0</span>
+  </div>
 </header>
 
 <div class="container">
   <div class="hero">
-    <h1>アクセシブルな配色設計ツール</h1>
-    <p>WCAG コントラスト比・色覚シミュレーションの制約条件を満たすカラーパレットを、S-V マップ上で視覚的に探索できます。メインカラーの H を固定し、制約を満たすアクセントカラーの有効領域を確認しながら色を決めてください。</p>
+    <h1 id="heroTitle"></h1>
+    <p id="heroDesc"></p>
   </div>
 
-  <!-- 制約条件 -->
-  <div class="sec-label">制約条件の選択</div>
+  <!-- Constraint conditions -->
+  <div class="sec-label" id="labelConstraints"></div>
   <div class="card">
     <div class="cbox-grid" id="cboxes"></div>
     <div class="thr-section">
-      <div class="thr-title">色覚シミュレーション 識別閾値</div>
-      <div class="thr-desc">c5〜c8 の条件に適用 — この値以上のコントラスト比を「識別可」とします</div>
+      <div class="thr-title" id="thrTitle"></div>
+      <div class="thr-desc" id="thrDesc"></div>
       <div class="thr-row">
         <button class="sb" id="bThrm">&#8592;</button>
         <input type="range" id="slThr" min="1.0" max="7.0" value="3.0" step="0.1" style="flex:1;">
         <button class="sb" id="bThrp">&#8594;</button>
         <span class="sval" id="vThr">3.0</span>
-        <button class="rb" id="rThr" title="初期値に戻す">&#8635;</button>
+        <button class="rb" id="rThr" title="Reset">&#8635;</button>
       </div>
       <div class="thr-hints">
-        <span class="thr-hint" id="hint10">1.0 制限なし</span>
-        <span class="thr-hint" id="hint30">3.0 WCAG AA大 (推奨)</span>
-        <span class="thr-hint" id="hint45">4.5 WCAG AA</span>
-        <span class="thr-hint" id="hint70">7.0 WCAG AAA</span>
+        <span class="thr-hint" id="hint10"></span>
+        <span class="thr-hint" id="hint30"></span>
+        <span class="thr-hint" id="hint45"></span>
+        <span class="thr-hint" id="hint70"></span>
       </div>
     </div>
   </div>
 
   <!-- Step 1: Main H -->
-  <div class="step-row"><span class="step-num">1</span><span class="step-title">メインカラーの H（色相）を決める</span></div>
+  <div class="step-row"><span class="step-num">1</span><span class="step-title" id="step1Title"></span></div>
   <div class="card">
     <canvas class="hue-bar" id="hueBarM" width="600" height="14"></canvas>
     <div class="slider-row">
@@ -530,12 +759,12 @@ footer a { color: var(--text3); }
       <input type="range" id="slH" min="0" max="360" value="168" step="1">
       <button class="sb" id="bHp">&#8594;</button>
       <span class="sval" id="vH">168</span>
-      <button class="rb" id="rH" title="初期値に戻す">&#8635;</button>
+      <button class="rb" id="rH" title="Reset">&#8635;</button>
     </div>
   </div>
 
   <!-- Step 2: Accent H -->
-  <div class="step-row"><span class="step-num">2</span><span class="step-title">アクセントカラーの H（色相）を決める</span></div>
+  <div class="step-row"><span class="step-num">2</span><span class="step-title" id="step2Title"></span></div>
   <div class="card">
     <canvas class="hue-bar" id="hueBarA" width="600" height="14"></canvas>
     <div class="slider-row">
@@ -544,32 +773,33 @@ footer a { color: var(--text3); }
       <input type="range" id="slAH" min="0" max="360" value="348" step="1">
       <button class="sb" id="bAHp">&#8594;</button>
       <span class="sval" id="vAH">348</span>
-      <button class="rb" id="rAH" title="初期値に戻す">&#8635;</button>
-      <button class="link-btn" id="setCompBtn">補色に設定</button>
+      <button class="rb" id="rAH" title="Reset">&#8635;</button>
+      <button class="link-btn" id="setCompBtn"></button>
     </div>
-    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">デフォルトは補色（+180°）。自由に変更できます。</div>
+    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="step2Note"></div>
   </div>
 
   <!-- Step 3 & 4: S-V maps -->
   <div class="row2">
     <!-- Main SV -->
     <div>
-      <div class="step-row" style="margin-top:0;"><span class="step-num">3</span><span class="step-title">メインカラー S・V を決める</span></div>
+      <div class="step-row" style="margin-top:0;"><span class="step-num">3</span><span class="step-title" id="step3Title"></span></div>
       <div class="card-hdr">
-        <div class="map-note">ドラッグ / クリックで選択</div>
-        <div id="mainOkBadge"><span class="pending-badge">未計算</span></div>
+        <div class="map-note" id="mapMNote1"></div>
+        <div id="mainOkBadge"><span class="pending-badge" id="pendingBadgeM"></span></div>
       </div>
-      <div class="map-note">OK = 制約を満たすアクセント (S,V) が存在する</div>
+      <div class="map-note" id="mapMNote2"></div>
       <div class="map-outer">
         <div class="axis-v"><span>V=100</span><span>V=50</span><span>V=0</span></div>
         <div class="axis-s"><span>S=0</span><span>S=100</span></div>
         <canvas class="map" id="mapM" width="240" height="240"></canvas>
       </div>
       <div class="legend-row">
-        <div class="leg" style="background:var(--ok-mid)"></div><span>OK（アクセント解あり）</span>
-        <div class="leg" style="background:#ddd;margin-left:8px;"></div><span>NG</span>
+        <div class="leg" style="background:var(--ok-mid)"></div><span id="legendMOk"></span>
+        <div class="leg" style="background:#ddd;margin-left:8px;"></div><span id="legendNG1"></span>
       </div>
       <div class="stale-note" id="mainStale"></div>
+      <div class="map-hint-box" id="mapMHintBox"></div>
       <div class="card card-sm">
         <div class="slider-row">
           <label>S</label>
@@ -577,7 +807,7 @@ footer a { color: var(--text3); }
           <input type="range" id="slMS" min="0" max="100" value="72" step="1">
           <button class="sb" id="bMSp">&#8594;</button>
           <span class="sval" id="vMS">72</span>
-          <button class="rb" id="rM" title="初期値に戻す">&#8635;</button>
+          <button class="rb" id="rM" title="Reset">&#8635;</button>
         </div>
         <div class="slider-row">
           <label>V</label>
@@ -593,22 +823,22 @@ footer a { color: var(--text3); }
 
     <!-- Accent SV -->
     <div>
-      <div class="step-row" style="margin-top:0;"><span class="step-num">4</span><span class="step-title">アクセントカラー S・V を決める</span></div>
+      <div class="step-row" style="margin-top:0;"><span class="step-num">4</span><span class="step-title" id="step4Title"></span></div>
       <div class="card-hdr">
-        <div class="map-note">緑の領域内に点を置くと全条件クリア</div>
+        <div class="map-note" id="mapANote1"></div>
         <div id="accentOkBadge"></div>
       </div>
-      <div class="map-note">現在のメイン(S,V)・アクセントH に対してリアルタイム更新</div>
+      <div class="map-note" id="mapANote2"></div>
       <div class="map-outer">
         <div class="axis-v"><span>V=100</span><span>V=50</span><span>V=0</span></div>
         <div class="axis-s"><span>S=0</span><span>S=100</span></div>
         <canvas class="map" id="mapA" width="240" height="240"></canvas>
       </div>
       <div class="legend-row">
-        <div class="leg" style="background:var(--ok-mid)"></div><span>全条件 OK</span>
-        <div class="leg" style="background:#ddd;margin-left:8px;"></div><span>NG</span>
+        <div class="leg" style="background:var(--ok-mid)"></div><span id="legendAOk"></span>
+        <div class="leg" style="background:#ddd;margin-left:8px;"></div><span id="legendNG2"></span>
       </div>
-      <div style="min-height:19px;"></div><!-- stale placeholder for alignment -->
+      <div style="min-height:19px;"></div>
       <div class="card card-sm" style="margin-top:8px;">
         <div class="slider-row">
           <label>S</label>
@@ -616,7 +846,7 @@ footer a { color: var(--text3); }
           <input type="range" id="slAS" min="0" max="100" value="80" step="1">
           <button class="sb" id="bASp">&#8594;</button>
           <span class="sval" id="vAS">80</span>
-          <button class="rb" id="rA" title="初期値に戻す">&#8635;</button>
+          <button class="rb" id="rA" title="Reset">&#8635;</button>
         </div>
         <div class="slider-row">
           <label>V</label>
@@ -633,49 +863,280 @@ footer a { color: var(--text3); }
 
   <!-- Calc button -->
   <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-    <button class="calc-btn" id="calcBtn">メインマップを計算する（50×50 グリッド）</button>
+    <button class="calc-btn" id="calcBtn"></button>
     <span class="calc-status" id="calcStatus"></span>
   </div>
 
   <div class="divider"></div>
 
   <!-- Judge -->
-  <div class="sec-label">総合判定 / 詳細</div>
+  <div class="sec-label" id="labelJudge"></div>
   <div class="card" id="judgeCard"></div>
 
 </div>
 
 <footer>
-  <p>Color Constraint Explorer &nbsp;·&nbsp; WCAG 2.1 / 色覚シミュレーション対応 &nbsp;·&nbsp; <a href="https://github.com/" target="_blank">GitHub</a></p>
+  <p>Color Explorer with Constraint &nbsp;·&nbsp; WCAG 2.1 / Color Vision Simulation &nbsp;·&nbsp; <a href="https://github.com/kota-may478/color-explorer-with-constraint" target="_blank">GitHub</a></p>
 </footer>
 
 <script>
+// ══════════════════════════════════════════════
+// i18n strings
+// ══════════════════════════════════════════════
+const I18N = {
+  en: {
+    heroTitle: 'Accessible Color Palette Design Tool',
+    heroDesc: 'Visually explore color palettes that satisfy WCAG contrast ratio and color vision simulation constraints on the S-V map. Fix the main color hue, then find valid accent colors within the constraint-satisfying regions.',
+    labelConstraints: 'Constraint conditions',
+    thrTitle: 'Color vision simulation — discrimination threshold',
+    thrDesc: 'Applied to c5–c8: contrast ratio above this value is treated as "distinguishable"',
+    hint10: '1.0 No limit',
+    hint30: '3.0 WCAG AA Large (rec.)',
+    hint45: '4.5 WCAG AA',
+    hint70: '7.0 WCAG AAA',
+    step1Title: 'Choose H (hue) for main color',
+    step2Title: 'Choose H (hue) for accent color',
+    step2Note: 'Default is complementary (+180°). You can freely adjust it.',
+    setComp: 'Set complementary',
+    step3Title: 'Choose S and V for main color',
+    step4Title: 'Choose S and V for accent color',
+    mapMNote1: 'Drag / click to select',
+    mapMNote2: 'OK = a valid accent (S,V) solution exists',
+    mapANote1: 'Place point in green region to pass all conditions',
+    mapANote2: 'Updates in real time for current main (S,V) and accent H',
+    legendMOk: 'OK (accent solution exists)',
+    legendAOk: 'All conditions OK',
+    legendNG: 'NG',
+    pendingM: 'Not computed',
+    staleMsg: '※ H / conditions / threshold changed. Please recalculate.',
+    needRecalc: 'Recalc needed',
+    calcBtn: 'Calculate main map (50×50 grid)',
+    recalcBtn: 'Recalculate',
+    calcRunning: 'Calculating…',
+    calcDone: 'Done',
+    labelJudge: 'Overall result / details',
+    noCondition: 'No condition selected',
+    allOk: 'All selected conditions satisfied',
+    notAchieved: ' condition(s) not met',
+    subContrast: 'Contrast ratio',
+    subSim: 'Color vision simulation ratio',
+    threshold: 'Threshold',
+    excludedNote: '* = excluded from constraint (does not affect result)',
+    okRegionNone: 'No OK region',
+    mapHint: 'Move the point to find (S, V) combinations satisfying the conditions.\nClick "Calculate main map" to display the region of main (S, V) values that have valid accent solutions.',
+    judgeGood: 'Good',
+    clist: [
+      { id:'c1', label:'Main / White (AA)',        detail:'Contrast ratio ≥ 4.5' },
+      { id:'c2', label:'Main / Background (AA)',   detail:'Contrast ratio ≥ 4.5' },
+      { id:'c3', label:'Accent / White (AA)',       detail:'Contrast ratio ≥ 4.5' },
+      { id:'c4', label:'Main / Accent',             detail:'Contrast ratio ≥ 3.0' },
+      { id:'c5', label:'Protanopia (red-weak)',      detail:'Simulation ratio ≥ threshold' },
+      { id:'c6', label:'Deuteranopia (green-weak)',  detail:'Simulation ratio ≥ threshold' },
+      { id:'c7', label:'Tritanopia (blue-weak)',     detail:'Simulation ratio ≥ threshold' },
+      { id:'c8', label:'Achromatopsia',              detail:'Simulation ratio ≥ threshold' },
+    ],
+    simNames: ['Protanopia', 'Deuteranopia', 'Tritanopia', 'Achromatopsia'],
+    dcLabels: ['Main / White', 'Main / Bg', 'Accent / White', 'Main / Accent'],
+    settingsTitle: 'Settings',
+    settingsThemeLabel: 'Theme',
+    settingsDarkModeLabel: 'Dark mode',
+    settingsBgLabel: 'Background colors',
+    settingsLightBgLabel: 'Light mode bg',
+    settingsDarkBgLabel: 'Dark mode bg',
+    resetColorsBtn: 'Reset to defaults',
+    settingsLangLabel: 'Language',
+  },
+  ja: {
+    heroTitle: 'アクセシブルな配色設計ツール',
+    heroDesc: 'WCAG コントラスト比・色覚シミュレーションの制約条件を満たすカラーパレットを、S-V マップ上で視覚的に探索できます。メインカラーの H を固定し、制約を満たすアクセントカラーの有効領域を確認しながら色を決めてください。',
+    labelConstraints: '制約条件の選択',
+    thrTitle: '色覚シミュレーション 識別閾値',
+    thrDesc: 'c5〜c8 の条件に適用 — この値以上のコントラスト比を「識別可」とします',
+    hint10: '1.0 制限なし',
+    hint30: '3.0 WCAG AA大 (推奨)',
+    hint45: '4.5 WCAG AA',
+    hint70: '7.0 WCAG AAA',
+    step1Title: 'メインカラーの H（色相）を決める',
+    step2Title: 'アクセントカラーの H（色相）を決める',
+    step2Note: 'デフォルトは補色（+180°）。自由に変更できます。',
+    setComp: '補色に設定',
+    step3Title: 'メインカラー S・V を決める',
+    step4Title: 'アクセントカラー S・V を決める',
+    mapMNote1: 'ドラッグ / クリックで選択',
+    mapMNote2: 'OK = 制約を満たすアクセント (S,V) が存在する',
+    mapANote1: '緑の領域内に点を置くと全条件クリア',
+    mapANote2: '現在のメイン(S,V)・アクセントH に対してリアルタイム更新',
+    legendMOk: 'OK（アクセント解あり）',
+    legendAOk: '全条件 OK',
+    legendNG: 'NG',
+    pendingM: '未計算',
+    staleMsg: '※ H・条件・閾値が変わりました。再計算してください。',
+    needRecalc: '要再計算',
+    calcBtn: 'メインマップを計算する（50×50 グリッド）',
+    recalcBtn: '再計算する',
+    calcRunning: '計算中...',
+    calcDone: '完了',
+    labelJudge: '総合判定 / 詳細',
+    noCondition: '条件未選択',
+    allOk: '選択した全条件をクリアしています',
+    notAchieved: ' 件が未達です',
+    subContrast: 'コントラスト比',
+    subSim: '色覚シミュレーション比',
+    threshold: '閾値',
+    excludedNote: '* = 制約条件から除外中（判定に影響しない）',
+    okRegionNone: 'OK 領域なし',
+    mapHint: '点を移動させると、条件を満たす (S, V) の組を見つけられます。\n「メインマップを計算する」のボタンを押すと、解が存在するメイン (S, V) の領域を表示できます。',
+    judgeGood: '良好',
+    clist: [
+      { id:'c1', label:'メイン / 白 (AA)',     detail:'コントラスト比 ≥ 4.5' },
+      { id:'c2', label:'メイン / 背景 (AA)',   detail:'コントラスト比 ≥ 4.5' },
+      { id:'c3', label:'アクセント / 白 (AA)', detail:'コントラスト比 ≥ 4.5' },
+      { id:'c4', label:'メイン / アクセント',  detail:'コントラスト比 ≥ 3.0' },
+      { id:'c5', label:'第1色覚（赤弱）',      detail:'シミュレーション比 ≥ 閾値' },
+      { id:'c6', label:'第2色覚（緑弱）',      detail:'シミュレーション比 ≥ 閾値' },
+      { id:'c7', label:'第3色覚（青弱）',      detail:'シミュレーション比 ≥ 閾値' },
+      { id:'c8', label:'全色盲',              detail:'シミュレーション比 ≥ 閾値' },
+    ],
+    simNames: ['第1色覚（赤弱）', '第2色覚（緑弱）', '第3色覚（青弱）', '全色盲'],
+    dcLabels: ['メイン / 白', 'メイン / 背景', 'アクセント / 白', 'メイン / アクセント'],
+    settingsTitle: '設定',
+    settingsThemeLabel: 'テーマ',
+    settingsDarkModeLabel: 'ダークモード',
+    settingsBgLabel: '背景色',
+    settingsLightBgLabel: 'ライトモード背景',
+    settingsDarkBgLabel: 'ダークモード背景',
+    resetColorsBtn: 'デフォルトに戻す',
+    settingsLangLabel: '言語',
+  }
+};
+
+// ══════════════════════════════════════════════
+// State
+// ══════════════════════════════════════════════
 const DEFS = { H:168, AH:348, MS:72, MV:42, AS:80, AV:34, Thr:3.0 };
 const BG = '#F0F7F5', W = '#FFFFFF';
 const RES_M = 50, RES_A = 50;
+const DEFAULT_LIGHT_BG = '#f7f6f3';
+const DEFAULT_DARK_BG  = '#18181b';
 
-const CLIST = [
-  { id:'c1', label:'メイン / 白 (AA)',     detail:'コントラスト比 ≥ 4.5' },
-  { id:'c2', label:'メイン / 背景 (AA)',   detail:'コントラスト比 ≥ 4.5' },
-  { id:'c3', label:'アクセント / 白 (AA)', detail:'コントラスト比 ≥ 4.5' },
-  { id:'c4', label:'メイン / アクセント',  detail:'コントラスト比 ≥ 3.0' },
-  { id:'c5', label:'第1色覚（赤弱）',      detail:'シミュレーション比 ≥ 閾値' },
-  { id:'c6', label:'第2色覚（緑弱）',      detail:'シミュレーション比 ≥ 閾値' },
-  { id:'c7', label:'第3色覚（青弱）',      detail:'シミュレーション比 ≥ 閾値' },
-  { id:'c8', label:'全色盲',              detail:'シミュレーション比 ≥ 閾値' },
-];
+function detectLang() {
+  const p = new URLSearchParams(location.search).get('lang');
+  if (p === 'en' || p === 'ja') return p;
+  try { const s = localStorage.getItem('cec_lang'); if (s === 'en' || s === 'ja') return s; } catch(e){}
+  return navigator.language && navigator.language.startsWith('ja') ? 'ja' : 'en';
+}
 
-// Build checkboxes
-const cboxes = document.getElementById('cboxes');
-CLIST.forEach(c => {
-  const lbl = document.createElement('label');
-  lbl.className = 'cbox-row';
-  lbl.innerHTML = `<input type="checkbox" id="${c.id}" checked>
-    <span class="clbl">${c.label}<span>${c.detail}</span></span>`;
-  cboxes.appendChild(lbl);
-});
+let lang = detectLang();
+let isDark = false;
+try { isDark = localStorage.getItem('cec_dark') === '1'; } catch(e){}
 
-// ── Color math ──
+let customLightBg = DEFAULT_LIGHT_BG;
+let customDarkBg  = DEFAULT_DARK_BG;
+try {
+  const lb = localStorage.getItem('cec_light_bg'); if (lb) customLightBg = lb;
+  const db = localStorage.getItem('cec_dark_bg');  if (db) customDarkBg  = db;
+} catch(e){}
+
+// ══════════════════════════════════════════════
+// Theme
+// ══════════════════════════════════════════════
+function applyTheme() {
+  document.body.classList.toggle('dark', isDark);
+  document.documentElement.style.setProperty('--bg', isDark ? customDarkBg : customLightBg);
+  document.getElementById('darkToggle').checked = isDark;
+  document.getElementById('darkModeBtn').textContent = isDark ? '☀' : '☾';
+  try { localStorage.setItem('cec_dark', isDark ? '1' : '0'); } catch(e){}
+}
+
+function applyCustomBg() {
+  document.documentElement.style.setProperty('--bg', isDark ? customDarkBg : customLightBg);
+  try {
+    localStorage.setItem('cec_light_bg', customLightBg);
+    localStorage.setItem('cec_dark_bg',  customDarkBg);
+  } catch(e){}
+}
+
+// ══════════════════════════════════════════════
+// i18n apply
+// ══════════════════════════════════════════════
+function applyLang() {
+  const t = I18N[lang];
+  document.documentElement.lang = lang;
+  document.getElementById('heroTitle').textContent   = t.heroTitle;
+  document.getElementById('heroDesc').textContent    = t.heroDesc;
+  document.getElementById('labelConstraints').textContent = t.labelConstraints;
+  document.getElementById('thrTitle').textContent    = t.thrTitle;
+  document.getElementById('thrDesc').textContent     = t.thrDesc;
+  document.getElementById('hint10').textContent = t.hint10;
+  document.getElementById('hint30').textContent = t.hint30;
+  document.getElementById('hint45').textContent = t.hint45;
+  document.getElementById('hint70').textContent = t.hint70;
+  document.getElementById('step1Title').textContent  = t.step1Title;
+  document.getElementById('step2Title').textContent  = t.step2Title;
+  document.getElementById('step2Note').textContent   = t.step2Note;
+  document.getElementById('setCompBtn').textContent  = t.setComp;
+  document.getElementById('step3Title').textContent  = t.step3Title;
+  document.getElementById('step4Title').textContent  = t.step4Title;
+  document.getElementById('mapMNote1').textContent   = t.mapMNote1;
+  document.getElementById('mapMNote2').textContent   = t.mapMNote2;
+  document.getElementById('mapANote1').textContent   = t.mapANote1;
+  document.getElementById('mapANote2').textContent   = t.mapANote2;
+  document.getElementById('legendMOk').textContent   = t.legendMOk;
+  document.getElementById('legendAOk').textContent   = t.legendAOk;
+  document.getElementById('legendNG1').textContent   = t.legendNG;
+  document.getElementById('legendNG2').textContent   = t.legendNG;
+  document.getElementById('pendingBadgeM').textContent = t.pendingM;
+  document.getElementById('labelJudge').textContent  = t.labelJudge;
+  document.getElementById('mapMHintBox').textContent = t.mapHint;
+  // calc btn text based on state
+  if (!calcRunning && !gridMData) {
+    document.getElementById('calcBtn').textContent = t.calcBtn;
+  } else if (calcRunning) {
+    document.getElementById('calcBtn').textContent = t.calcRunning;
+  } else {
+    document.getElementById('calcBtn').textContent = t.recalcBtn;
+  }
+  // rebuild checkboxes (preserve checked state)
+  const prevChecked = {};
+  t.clist.forEach(c => {
+    const el = document.getElementById(c.id);
+    prevChecked[c.id] = el ? el.checked : true;
+  });
+  const cboxContainer = document.getElementById('cboxes');
+  cboxContainer.innerHTML = '';
+  t.clist.forEach(c => {
+    const lbl = document.createElement('label');
+    lbl.className = 'cbox-row';
+    lbl.innerHTML = `<input type="checkbox" id="${c.id}" ${prevChecked[c.id] ? 'checked' : ''}>
+      <span class="clbl">${c.label}<span>${c.detail}</span></span>`;
+    cboxContainer.appendChild(lbl);
+  });
+  t.clist.forEach(c => document.getElementById(c.id).addEventListener('change', staleUpdate));
+  // settings panel strings
+  document.getElementById('settingsTitle').innerHTML = t.settingsTitle + ' <button id="closeSettings">&#x2715;</button>';
+  document.getElementById('settingsTitle').querySelector('#closeSettings').addEventListener('click', closeSettings);
+  document.getElementById('settingsThemeLabel').textContent   = t.settingsThemeLabel;
+  document.getElementById('settingsDarkModeLabel').textContent = t.settingsDarkModeLabel;
+  document.getElementById('settingsBgLabel').textContent      = t.settingsBgLabel;
+  document.getElementById('settingsLightBgLabel').textContent = t.settingsLightBgLabel;
+  document.getElementById('settingsDarkBgLabel').textContent  = t.settingsDarkBgLabel;
+  document.getElementById('resetColorsBtn').textContent       = t.resetColorsBtn;
+  document.getElementById('settingsLangLabel').textContent    = t.settingsLangLabel;
+  // header lang button shows the OTHER language
+  document.getElementById('headerLangBtn').textContent = lang === 'ja' ? 'EN' : 'JA';
+  // stale note if visible
+  const staleEl = document.getElementById('mainStale');
+  if (staleEl.textContent) staleEl.textContent = t.staleMsg;
+  // update URL param without reload
+  const url = new URL(location.href);
+  url.searchParams.set('lang', lang);
+  history.replaceState(null, '', url.toString());
+  try { localStorage.setItem('cec_lang', lang); } catch(e){}
+}
+
+// ══════════════════════════════════════════════
+// Color math
+// ══════════════════════════════════════════════
 function hsv2rgb(h, s, v) {
   s /= 100; v /= 100;
   const f = n => { const k = (n + h / 60) % 6; return v - v * s * Math.max(0, Math.min(k, 4 - k, 1)); };
@@ -696,15 +1157,15 @@ function cratio(h1, h2) {
 }
 function simCB(r, g, b, t) {
   if (t === 0) return [Math.round(0.567*r+0.433*g), Math.round(0.558*r+0.442*g), Math.round(0.242*r+0.758*b)];
-  if (t === 1) return [Math.round(0.625*r+0.375*g), Math.round(0.7*r+0.3*g),   Math.round(0.3*g+0.7*b)];
-  if (t === 2) return [Math.round(0.95*r+0.05*b),  Math.round(0.433*g+0.567*b),Math.round(0.475*g+0.525*b)];
+  if (t === 1) return [Math.round(0.625*r+0.375*g), Math.round(0.7*r+0.3*g),     Math.round(0.3*g+0.7*b)];
+  if (t === 2) return [Math.round(0.95*r+0.05*b),   Math.round(0.433*g+0.567*b), Math.round(0.475*g+0.525*b)];
   const l = Math.round(0.299*r + 0.587*g + 0.114*b); return [l, l, l];
 }
 
 // ── Getters ──
 function gv(id) { return +document.getElementById(id).value; }
 function getThr() { return Math.round(gv('slThr') * 10) / 10; }
-function getChecked() { return CLIST.map(c => document.getElementById(c.id).checked); }
+function getChecked() { return I18N[lang].clist.map(c => document.getElementById(c.id).checked); }
 
 // ── Evaluate one point ──
 function evalPoint(mH, mS, mV, aH, aS, aV, checked, thr) {
@@ -729,7 +1190,7 @@ function evalPoint(mH, mS, mV, aH, aS, aV, checked, thr) {
   };
 }
 
-// ── Accent grid (fast, realtime) ──
+// ── Accent grid ──
 function buildAccentGrid(mH, mS, mV, aH, checked, thr) {
   const grid = new Uint8Array(RES_A * RES_A);
   let okCount = 0;
@@ -746,7 +1207,7 @@ function buildAccentGrid(mH, mS, mV, aH, checked, thr) {
   return { grid, okCount };
 }
 
-// ── Accent existence check (for main grid) ──
+// ── Accent existence check ──
 function accentHasAny(mH, mS, mV, aH, checked, thr) {
   for (let si = 0; si < RES_A; si++) {
     for (let vi = 0; vi < RES_A; vi++) {
@@ -771,7 +1232,7 @@ function buildMainGridAsync(H, aH, checked, thr, onDone) {
   const btn = document.getElementById('calcBtn');
   const status = document.getElementById('calcStatus');
   btn.classList.add('running');
-  btn.textContent = '計算中...';
+  btn.textContent = I18N[lang].calcRunning;
   status.textContent = '0%';
   function step() {
     const end = Math.min(i + 5, total);
@@ -790,10 +1251,11 @@ function buildMainGridAsync(H, aH, checked, thr, onDone) {
     } else {
       calcRunning = false;
       btn.classList.remove('running');
-      btn.textContent = '再計算する';
-      status.textContent = '完了';
+      btn.textContent = I18N[lang].recalcBtn;
+      status.textContent = I18N[lang].calcDone;
       gridMData = { grid, okCount };
       document.getElementById('mainStale').textContent = '';
+      document.getElementById('mapMHintBox').classList.add('hidden');
       onDone();
     }
   }
@@ -833,10 +1295,6 @@ function drawEmptyMap(canvasId, curS, curV) {
   const ctx = canvas.getContext('2d');
   const CW = canvas.width, CH = canvas.height;
   ctx.fillStyle = '#eceae6'; ctx.fillRect(0, 0, CW, CH);
-  ctx.fillStyle = '#a09e99';
-  ctx.font = '11px "DM Mono", monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('「計算する」を押してください', CW / 2, CH / 2);
   const cx = Math.round(curS / 100 * (CW - 1));
   const cy = Math.round((1 - curV / 100) * (CH - 1));
   ctx.beginPath(); ctx.arc(cx, cy, 8, 0, Math.PI * 2);
@@ -847,18 +1305,18 @@ function drawEmptyMap(canvasId, curS, curV) {
 function drawHueBar(canvasId, selectedH) {
   const canvas = document.getElementById(canvasId);
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  for (let x = 0; x < W; x++) {
-    const h = x / W * 360;
+  const CW = canvas.width, CH = canvas.height;
+  for (let x = 0; x < CW; x++) {
+    const h = x / CW * 360;
     const [r, g, b] = hsv2rgb(h, 100, 100);
     ctx.fillStyle = `rgb(${r},${g},${b})`;
-    ctx.fillRect(x, 0, 1, H);
+    ctx.fillRect(x, 0, 1, CH);
   }
-  const cx = Math.round(selectedH / 360 * W);
+  const cx = Math.round(selectedH / 360 * CW);
   ctx.strokeStyle = 'white'; ctx.lineWidth = 2.5;
-  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, CH); ctx.stroke();
   ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, CH); ctx.stroke();
 }
 
 function updateThrUI() {
@@ -877,11 +1335,12 @@ function updateAccentMap() {
   const pct = Math.round(ra.okCount / RES_A / RES_A * 100);
   document.getElementById('accentOkBadge').innerHTML = ra.okCount > 0
     ? `<span class="ok-badge">OK ${pct}%</span>`
-    : `<span class="ng-badge">OK 領域なし</span>`;
+    : `<span class="ng-badge">${I18N[lang].okRegionNone}</span>`;
   drawMap('mapA', ra.grid, RES_A, gv('slAS'), gv('slAV'));
 }
 
 function updateJudge() {
+  const t = I18N[lang];
   const H = gv('slH'), AH = gv('slAH'), MS = gv('slMS'), MV = gv('slMV');
   const AS = gv('slAS'), AV = gv('slAV'), thr = getThr();
   const checked = getChecked();
@@ -894,13 +1353,13 @@ function updateJudge() {
 
   const allOk = totalChecked > 0 && res.pass === res.total;
   const cls = allOk ? 'pass' : (res.pass > 0 && res.pass >= res.total * 0.75) ? 'warn' : 'fail';
-  function bw(v, t) { return v >= t ? 'pass' : v >= t * 0.75 ? 'warn' : 'fail'; }
+  function bw(v, thr2) { return v >= thr2 ? 'pass' : v >= thr2 * 0.75 ? 'warn' : 'fail'; }
   const f2 = n => n.toFixed(2);
-  const simNames = ['第1色覚（赤弱）', '第2色覚（緑弱）', '第3色覚（青弱）', '全色盲'];
+
   const simHtml = res.simData.map((d, i) => {
     const ok = d.ratio >= thr;
     return `<div class="sim-chip">
-      <div class="sim-lbl">${simNames[i]}${checked[4+i] ? '' : '&nbsp;*'}</div>
+      <div class="sim-lbl">${t.simNames[i]}${checked[4+i] ? '' : '&nbsp;*'}</div>
       <div class="sim-dots">
         <div class="sim-dot" style="background:${d.smH}"></div>
         <div class="sim-dot" style="background:${d.saH}"></div>
@@ -909,32 +1368,35 @@ function updateJudge() {
     </div>`;
   }).join('');
 
+  const crVals = [res.crMW, res.crMBG, res.crAW, res.crMA];
+  const crThrs = [4.5, 4.5, 4.5, 3.0];
+  const dcHtml = crVals.map((v, i) =>
+    `<div class="dc"><div class="dc-num">${f2(v)} <span class="badge ${bw(v, crThrs[i])}">${v >= crThrs[i] ? 'OK' : 'NG'}</span></div>
+    <div class="dc-lbl">${t.dcLabels[i]}${checked[i] ? '' : ' *'}</div></div>`
+  ).join('');
+
   document.getElementById('judgeCard').innerHTML = `
     <div class="judge-overall">
       <span class="badge judge-badge ${cls}" style="font-size:13px;padding:5px 18px;">
-        ${allOk ? '良好' : totalChecked === 0 ? '条件未選択' : res.pass + ' / ' + res.total + ' 条件クリア'}
+        ${allOk ? t.judgeGood : totalChecked === 0 ? t.noCondition : res.pass + ' / ' + res.total}
       </span>
-      <span class="judge-text">${allOk ? '選択した全条件をクリアしています' : totalChecked === 0 ? '' : res.total - res.pass + ' 件が未達です'}</span>
+      <span class="judge-text">${allOk ? t.allOk : totalChecked === 0 ? '' : (res.total - res.pass) + t.notAchieved}</span>
     </div>
-    <div class="sub-label">コントラスト比</div>
-    <div class="detail-grid">
-      <div class="dc"><div class="dc-num">${f2(res.crMW)} <span class="badge ${bw(res.crMW,4.5)}">${res.crMW>=4.5?'AA':'NG'}</span></div><div class="dc-lbl">メイン / 白${checked[0]?'':' *'}</div></div>
-      <div class="dc"><div class="dc-num">${f2(res.crMBG)} <span class="badge ${bw(res.crMBG,4.5)}">${res.crMBG>=4.5?'AA':'NG'}</span></div><div class="dc-lbl">メイン / 背景${checked[1]?'':' *'}</div></div>
-      <div class="dc"><div class="dc-num">${f2(res.crAW)} <span class="badge ${bw(res.crAW,4.5)}">${res.crAW>=4.5?'AA':'NG'}</span></div><div class="dc-lbl">アクセント / 白${checked[2]?'':' *'}</div></div>
-      <div class="dc"><div class="dc-num">${f2(res.crMA)} <span class="badge ${bw(res.crMA,3)}">${res.crMA>=3?'OK':'NG'}</span></div><div class="dc-lbl">メイン / アクセント${checked[3]?'':' *'}</div></div>
-    </div>
-    <div class="sub-label" style="margin-top:14px;">色覚シミュレーション比 <span style="font-size:10px;font-weight:400;">(閾値: ${thr.toFixed(1)})</span></div>
+    <div class="sub-label">${t.subContrast}</div>
+    <div class="detail-grid">${dcHtml}</div>
+    <div class="sub-label" style="margin-top:14px;">${t.subSim} <span style="font-size:10px;font-weight:400;">(${t.threshold}: ${thr.toFixed(1)})</span></div>
     <div class="sim-grid">${simHtml}</div>
-    <div class="note">* = 制約条件から除外中（判定に影響しない）</div>
+    <div class="note">${t.excludedNote}</div>
   `;
 }
 
 function markStale() {
   gridMData = null;
-  document.getElementById('mainStale').textContent = '※ H・条件・閾値が変わりました。再計算してください。';
-  document.getElementById('mainOkBadge').innerHTML = '<span class="pending-badge">要再計算</span>';
-  document.getElementById('calcBtn').textContent = '再計算する';
+  document.getElementById('mainStale').textContent = I18N[lang].staleMsg;
+  document.getElementById('mainOkBadge').innerHTML = `<span class="pending-badge">${I18N[lang].needRecalc}</span>`;
+  document.getElementById('calcBtn').textContent = I18N[lang].recalcBtn;
   document.getElementById('calcStatus').textContent = '';
+  document.getElementById('mapMHintBox').classList.remove('hidden');
 }
 
 function update() {
@@ -961,7 +1423,7 @@ document.getElementById('calcBtn').addEventListener('click', () => {
     const pct = Math.round(gridMData.okCount / RES_M / RES_M * 100);
     document.getElementById('mainOkBadge').innerHTML = gridMData.okCount > 0
       ? `<span class="ok-badge">OK ${pct}%</span>`
-      : `<span class="ng-badge">OK 領域なし</span>`;
+      : `<span class="ng-badge">${I18N[lang].okRegionNone}</span>`;
     drawMap('mapM', gridMData.grid, RES_M, gv('slMS'), gv('slMV'));
   });
 });
@@ -1014,7 +1476,7 @@ function setupMapDrag(canvasId, sId, vId, cb) {
   document.addEventListener('mouseup',  () => { dragging = false; });
 }
 
-// ── Wire up all controls ──
+// ── Wire up controls ──
 const staleUpdate = () => { markStale(); update(); };
 
 setupHold('bHm',  'slH',  -1, staleUpdate);
@@ -1043,12 +1505,103 @@ document.getElementById('rThr').addEventListener('click', () => { document.getEl
 document.getElementById('rM').addEventListener('click',   () => { document.getElementById('slMS').value = DEFS.MS; document.getElementById('slMV').value = DEFS.MV; update(); });
 document.getElementById('rA').addEventListener('click',   () => { document.getElementById('slAS').value = DEFS.AS; document.getElementById('slAV').value = DEFS.AV; update(); });
 
-CLIST.forEach(c => document.getElementById(c.id).addEventListener('change', staleUpdate));
-
 setupMapDrag('mapM', 'slMS', 'slMV', update);
 setupMapDrag('mapA', 'slAS', 'slAV', update);
 
-// ── Init ──
+// ══════════════════════════════════════════════
+// Dark mode toggle
+// ══════════════════════════════════════════════
+document.getElementById('darkModeBtn').addEventListener('click', () => {
+  isDark = !isDark;
+  applyTheme();
+  applyCustomBg();
+});
+document.getElementById('darkToggle').addEventListener('change', e => {
+  isDark = e.target.checked;
+  applyTheme();
+  applyCustomBg();
+});
+
+// ══════════════════════════════════════════════
+// Language toggle
+// ══════════════════════════════════════════════
+function switchLang(newLang) {
+  lang = newLang;
+  applyLang();
+  update();
+}
+document.getElementById('headerLangBtn').addEventListener('click', () => {
+  switchLang(lang === 'ja' ? 'en' : 'ja');
+});
+document.getElementById('settingsLangEn').addEventListener('click', () => switchLang('en'));
+document.getElementById('settingsLangJa').addEventListener('click', () => switchLang('ja'));
+
+// ══════════════════════════════════════════════
+// Settings panel
+// ══════════════════════════════════════════════
+function openSettings() {
+  document.getElementById('settingsOverlay').classList.add('open');
+  document.getElementById('lightBgPicker').value = customLightBg;
+  document.getElementById('lightBgHex').value    = customLightBg;
+  document.getElementById('darkBgPicker').value  = customDarkBg;
+  document.getElementById('darkBgHex').value     = customDarkBg;
+  document.getElementById('darkToggle').checked  = isDark;
+}
+function closeSettings() {
+  document.getElementById('settingsOverlay').classList.remove('open');
+}
+document.getElementById('settingsBtn').addEventListener('click', openSettings);
+document.getElementById('closeSettings').addEventListener('click', closeSettings);
+document.getElementById('settingsOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('settingsOverlay')) closeSettings();
+});
+
+// Color pickers — light bg
+document.getElementById('lightBgPicker').addEventListener('input', e => {
+  customLightBg = e.target.value;
+  document.getElementById('lightBgHex').value = customLightBg;
+  applyCustomBg();
+});
+document.getElementById('lightBgHex').addEventListener('input', e => {
+  const v = e.target.value.trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+    customLightBg = v;
+    document.getElementById('lightBgPicker').value = v;
+    applyCustomBg();
+  }
+});
+// Color pickers — dark bg
+document.getElementById('darkBgPicker').addEventListener('input', e => {
+  customDarkBg = e.target.value;
+  document.getElementById('darkBgHex').value = customDarkBg;
+  applyCustomBg();
+});
+document.getElementById('darkBgHex').addEventListener('input', e => {
+  const v = e.target.value.trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+    customDarkBg = v;
+    document.getElementById('darkBgPicker').value = v;
+    applyCustomBg();
+  }
+});
+
+document.getElementById('resetColorsBtn').addEventListener('click', () => {
+  customLightBg = DEFAULT_LIGHT_BG;
+  customDarkBg  = DEFAULT_DARK_BG;
+  document.getElementById('lightBgPicker').value = customLightBg;
+  document.getElementById('lightBgHex').value    = customLightBg;
+  document.getElementById('darkBgPicker').value  = customDarkBg;
+  document.getElementById('darkBgHex').value     = customDarkBg;
+  applyCustomBg();
+  try { localStorage.removeItem('cec_light_bg'); localStorage.removeItem('cec_dark_bg'); } catch(e){}
+});
+
+// ══════════════════════════════════════════════
+// Init
+// ══════════════════════════════════════════════
+applyTheme();
+applyCustomBg();
+applyLang();
 drawEmptyMap('mapM', DEFS.MS, DEFS.MV);
 update();
 </script>
