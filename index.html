@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Color Constraint Explorer — アクセシブルな配色設計ツール</title>
+<meta name="description" content="WCAG・色覚シミュレーションの制約条件を満たすカラーパレットを視覚的に探索できる設計支援ツール">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
+
+:root {
+  --bg: #f7f6f3;
+  --surface: #ffffff;
+  --surface2: #f2f1ee;
+  --surface3: #e8e7e3;
+  --border: rgba(0,0,0,0.10);
+  --border2: rgba(0,0,0,0.06);
+  --text: #1a1917;
+  --text2: #6b6860;
+  --text3: #a09e99;
+  --ok: #1a6630;
+  --ok-bg: #d4edda;
+  --ok-mid: #1a8a72;
+  --warn: #856404;
+  --warn-bg: #fff3cd;
+  --fail: #8b2222;
+  --fail-bg: #fce8e8;
+  --accent: #2d6a9f;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --mono: 'DM Mono', monospace;
+  --sans: 'Zen Kaku Gothic New', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* ── Header ── */
+header {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  padding: 0 2rem;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: .04em;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--ok-mid);
+  flex-shrink: 0;
+}
+.header-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2px 10px;
+}
+
+/* ── Layout ── */
+.container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+.hero {
+  margin-bottom: 2.5rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--border2);
+}
+.hero h1 {
+  font-size: clamp(20px, 3vw, 28px);
+  font-weight: 700;
+  letter-spacing: -.02em;
+  margin-bottom: .5rem;
+  line-height: 1.3;
+}
+.hero p {
+  font-size: 14px;
+  color: var(--text2);
+  max-width: 600px;
+  line-height: 1.7;
+}
+
+/* ── Card ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 14px;
+}
+.card-sm {
+  padding: .85rem 1rem;
+  margin-top: 8px;
+}
+.sec-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 8px;
+}
+.card-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.card-title { font-size: 13px; font-weight: 500; color: var(--text); }
+
+/* ── Step label ── */
+.step-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0 8px;
+}
+.step-num {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--ok-mid);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.step-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text2);
+  letter-spacing: .04em;
+}
+
+/* ── Sliders & Controls ── */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 9px;
+}
+.slider-row:last-child { margin-bottom: 0; }
+.slider-row label {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text2);
+  width: 16px;
+  flex-shrink: 0;
+}
+input[type=range] {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface3);
+  outline: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--text);
+  cursor: pointer;
+  border: 2px solid var(--surface);
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+  transition: transform .1s;
+}
+input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+input[type=range]::-moz-range-thumb {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--text);
+  cursor: pointer;
+  border: 2px solid var(--surface);
+}
+.sval {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  width: 36px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.sb {
+  width: 26px; height: 26px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  transition: background .1s;
+}
+.sb:hover { background: var(--surface3); }
+.sb:active { transform: scale(.92); }
+.rb {
+  width: 26px; height: 26px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text3);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background .1s, color .1s;
+}
+.rb:hover { background: var(--surface3); color: var(--text); }
+.rb:active { transform: scale(.92); }
+.link-btn {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--text3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  flex-shrink: 0;
+}
+.link-btn:hover { color: var(--text2); }
+
+/* ── Calc button ── */
+.calc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--text);
+  color: var(--surface);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity .15s;
+}
+.calc-btn:hover { opacity: .85; }
+.calc-btn.running { background: var(--surface3); color: var(--text3); cursor: default; }
+.calc-status {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text3);
+}
+
+/* ── Badges ── */
+.badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.badge.pass { background: var(--ok-bg); color: var(--ok); }
+.badge.warn { background: var(--warn-bg); color: var(--warn); }
+.badge.fail { background: var(--fail-bg); color: var(--fail); }
+.ok-badge { font-family: var(--mono); font-size: 11px; font-weight: 500; padding: 2px 9px; border-radius: 10px; background: var(--ok-bg); color: var(--ok); }
+.ng-badge { font-family: var(--mono); font-size: 11px; font-weight: 500; padding: 2px 9px; border-radius: 10px; background: var(--fail-bg); color: var(--fail); }
+.pending-badge { font-family: var(--mono); font-size: 11px; font-weight: 500; padding: 2px 9px; border-radius: 10px; background: var(--surface2); color: var(--text3); }
+
+/* ── Two-col layout ── */
+.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+@media (max-width: 600px) {
+  .row2 { grid-template-columns: 1fr; }
+}
+
+/* ── Checkbox grid ── */
+.cbox-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 20px;
+}
+@media (max-width: 480px) { .cbox-grid { grid-template-columns: 1fr; } }
+.cbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 5px 0;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border2);
+}
+.cbox-row:last-child { border-bottom: none; }
+.cbox-row input[type=checkbox] {
+  margin-top: 3px;
+  flex-shrink: 0;
+  width: 14px; height: 14px;
+  accent-color: var(--ok-mid);
+  cursor: pointer;
+}
+.clbl { font-size: 12px; color: var(--text); line-height: 1.4; }
+.clbl span { font-size: 10px; color: var(--text3); display: block; font-family: var(--mono); }
+
+/* ── Threshold ── */
+.thr-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border2);
+}
+.thr-title { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+.thr-desc { font-size: 11px; color: var(--text3); margin-bottom: 9px; font-family: var(--mono); }
+.thr-row { display: flex; align-items: center; gap: 7px; }
+.thr-hints { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.thr-hint {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 9px;
+  border-radius: 10px;
+  background: var(--surface2);
+  color: var(--text3);
+  border: 1px solid transparent;
+  cursor: default;
+  transition: all .15s;
+}
+.thr-hint.active { background: var(--ok-bg); color: var(--ok); border-color: rgba(26,134,114,.3); }
+
+/* ── Hue bar ── */
+.hue-bar { width: 100%; height: 14px; border-radius: 7px; margin-bottom: 8px; display: block; }
+
+/* ── Map ── */
+.map-outer {
+  position: relative;
+  padding-left: 24px;
+  margin-bottom: 5px;
+}
+.axis-v {
+  position: absolute;
+  left: 0; top: 14px; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--text3);
+}
+.axis-s {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--text3);
+  padding: 0 1px;
+  margin-bottom: 2px;
+}
+canvas.map {
+  display: block;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  cursor: crosshair;
+  width: 100%;
+  height: auto;
+  touch-action: none;
+}
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  margin-bottom: 4px;
+}
+.leg { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+.map-note { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-bottom: 5px; }
+.stale-note { font-family: var(--mono); font-size: 10px; color: var(--warn); margin-top: 4px; min-height: 15px; }
+
+/* ── Swatch ── */
+.swatch {
+  width: 100%;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  margin-bottom: 5px;
+  transition: background .08s;
+}
+.hexlbl {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text2);
+  text-align: center;
+}
+
+/* ── Judge card ── */
+.judge-overall {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.judge-badge {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 5px 18px;
+  border-radius: 20px;
+}
+.judge-text { font-size: 13px; color: var(--text2); }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 8px; }
+.dc { border-radius: var(--radius-sm); padding: 8px 10px; border: 1px solid var(--border); }
+.dc-num { font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--text); }
+.dc-lbl { font-size: 10px; color: var(--text2); margin-top: 3px; }
+.sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 8px; }
+@media (max-width: 480px) { .sim-grid { grid-template-columns: 1fr; } }
+.sim-chip { border-radius: var(--radius-sm); padding: 8px 10px; border: 1px solid var(--border); }
+.sim-lbl { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-bottom: 5px; }
+.sim-dots { display: flex; gap: 6px; align-items: center; }
+.sim-dot { width: 20px; height: 20px; border-radius: 4px; flex-shrink: 0; border: 1px solid var(--border2); }
+.sub-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin: 14px 0 6px;
+}
+.note { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 8px; }
+
+/* ── Divider ── */
+.divider { height: 1px; background: var(--border2); margin: 20px 0; }
+
+/* ── Footer ── */
+footer {
+  text-align: center;
+  padding: 2rem;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+  border-top: 1px solid var(--border2);
+}
+footer a { color: var(--text3); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    Color Constraint Explorer
+  </div>
+  <span class="header-tag">v1.0</span>
+</header>
+
+<div class="container">
+  <div class="hero">
+    <h1>アクセシブルな配色設計ツール</h1>
+    <p>WCAG コントラスト比・色覚シミュレーションの制約条件を満たすカラーパレットを、S-V マップ上で視覚的に探索できます。メインカラーの H を固定し、制約を満たすアクセントカラーの有効領域を確認しながら色を決めてください。</p>
+  </div>
+
+  <!-- 制約条件 -->
+  <div class="sec-label">制約条件の選択</div>
+  <div class="card">
+    <div class="cbox-grid" id="cboxes"></div>
+    <div class="thr-section">
+      <div class="thr-title">色覚シミュレーション 識別閾値</div>
+      <div class="thr-desc">c5〜c8 の条件に適用 — この値以上のコントラスト比を「識別可」とします</div>
+      <div class="thr-row">
+        <button class="sb" id="bThrm">&#8592;</button>
+        <input type="range" id="slThr" min="1.0" max="7.0" value="3.0" step="0.1" style="flex:1;">
+        <button class="sb" id="bThrp">&#8594;</button>
+        <span class="sval" id="vThr">3.0</span>
+        <button class="rb" id="rThr" title="初期値に戻す">&#8635;</button>
+      </div>
+      <div class="thr-hints">
+        <span class="thr-hint" id="hint10">1.0 制限なし</span>
+        <span class="thr-hint" id="hint30">3.0 WCAG AA大 (推奨)</span>
+        <span class="thr-hint" id="hint45">4.5 WCAG AA</span>
+        <span class="thr-hint" id="hint70">7.0 WCAG AAA</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 1: Main H -->
+  <div class="step-row"><span class="step-num">1</span><span class="step-title">メインカラーの H（色相）を決める</span></div>
+  <div class="card">
+    <canvas class="hue-bar" id="hueBarM" width="600" height="14"></canvas>
+    <div class="slider-row">
+      <label>H</label>
+      <button class="sb" id="bHm">&#8592;</button>
+      <input type="range" id="slH" min="0" max="360" value="168" step="1">
+      <button class="sb" id="bHp">&#8594;</button>
+      <span class="sval" id="vH">168</span>
+      <button class="rb" id="rH" title="初期値に戻す">&#8635;</button>
+    </div>
+  </div>
+
+  <!-- Step 2: Accent H -->
+  <div class="step-row"><span class="step-num">2</span><span class="step-title">アクセントカラーの H（色相）を決める</span></div>
+  <div class="card">
+    <canvas class="hue-bar" id="hueBarA" width="600" height="14"></canvas>
+    <div class="slider-row">
+      <label>H</label>
+      <button class="sb" id="bAHm">&#8592;</button>
+      <input type="range" id="slAH" min="0" max="360" value="348" step="1">
+      <button class="sb" id="bAHp">&#8594;</button>
+      <span class="sval" id="vAH">348</span>
+      <button class="rb" id="rAH" title="初期値に戻す">&#8635;</button>
+      <button class="link-btn" id="setCompBtn">補色に設定</button>
+    </div>
+    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">デフォルトは補色（+180°）。自由に変更できます。</div>
+  </div>
+
+  <!-- Step 3 & 4: S-V maps -->
+  <div class="row2">
+    <!-- Main SV -->
+    <div>
+      <div class="step-row" style="margin-top:0;"><span class="step-num">3</span><span class="step-title">メインカラー S・V を決める</span></div>
+      <div class="card-hdr">
+        <div class="map-note">ドラッグ / クリックで選択</div>
+        <div id="mainOkBadge"><span class="pending-badge">未計算</span></div>
+      </div>
+      <div class="map-note">OK = 制約を満たすアクセント (S,V) が存在する</div>
+      <div class="map-outer">
+        <div class="axis-v"><span>V=100</span><span>V=50</span><span>V=0</span></div>
+        <div class="axis-s"><span>S=0</span><span>S=100</span></div>
+        <canvas class="map" id="mapM" width="240" height="240"></canvas>
+      </div>
+      <div class="legend-row">
+        <div class="leg" style="background:var(--ok-mid)"></div><span>OK（アクセント解あり）</span>
+        <div class="leg" style="background:#ddd;margin-left:8px;"></div><span>NG</span>
+      </div>
+      <div class="stale-note" id="mainStale"></div>
+      <div class="card card-sm">
+        <div class="slider-row">
+          <label>S</label>
+          <button class="sb" id="bMSm">&#8592;</button>
+          <input type="range" id="slMS" min="0" max="100" value="72" step="1">
+          <button class="sb" id="bMSp">&#8594;</button>
+          <span class="sval" id="vMS">72</span>
+          <button class="rb" id="rM" title="初期値に戻す">&#8635;</button>
+        </div>
+        <div class="slider-row">
+          <label>V</label>
+          <button class="sb" id="bMVm">&#8592;</button>
+          <input type="range" id="slMV" min="0" max="100" value="42" step="1">
+          <button class="sb" id="bMVp">&#8594;</button>
+          <span class="sval" id="vMV">42</span>
+        </div>
+        <div class="swatch" id="swM"></div>
+        <div class="hexlbl" id="hexM"></div>
+      </div>
+    </div>
+
+    <!-- Accent SV -->
+    <div>
+      <div class="step-row" style="margin-top:0;"><span class="step-num">4</span><span class="step-title">アクセントカラー S・V を決める</span></div>
+      <div class="card-hdr">
+        <div class="map-note">緑の領域内に点を置くと全条件クリア</div>
+        <div id="accentOkBadge"></div>
+      </div>
+      <div class="map-note">現在のメイン(S,V)・アクセントH に対してリアルタイム更新</div>
+      <div class="map-outer">
+        <div class="axis-v"><span>V=100</span><span>V=50</span><span>V=0</span></div>
+        <div class="axis-s"><span>S=0</span><span>S=100</span></div>
+        <canvas class="map" id="mapA" width="240" height="240"></canvas>
+      </div>
+      <div class="legend-row">
+        <div class="leg" style="background:var(--ok-mid)"></div><span>全条件 OK</span>
+        <div class="leg" style="background:#ddd;margin-left:8px;"></div><span>NG</span>
+      </div>
+      <div style="min-height:19px;"></div><!-- stale placeholder for alignment -->
+      <div class="card card-sm" style="margin-top:8px;">
+        <div class="slider-row">
+          <label>S</label>
+          <button class="sb" id="bASm">&#8592;</button>
+          <input type="range" id="slAS" min="0" max="100" value="80" step="1">
+          <button class="sb" id="bASp">&#8594;</button>
+          <span class="sval" id="vAS">80</span>
+          <button class="rb" id="rA" title="初期値に戻す">&#8635;</button>
+        </div>
+        <div class="slider-row">
+          <label>V</label>
+          <button class="sb" id="bAVm">&#8592;</button>
+          <input type="range" id="slAV" min="0" max="100" value="34" step="1">
+          <button class="sb" id="bAVp">&#8594;</button>
+          <span class="sval" id="vAV">34</span>
+        </div>
+        <div class="swatch" id="swA"></div>
+        <div class="hexlbl" id="hexA"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calc button -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+    <button class="calc-btn" id="calcBtn">メインマップを計算する（50×50 グリッド）</button>
+    <span class="calc-status" id="calcStatus"></span>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Judge -->
+  <div class="sec-label">総合判定 / 詳細</div>
+  <div class="card" id="judgeCard"></div>
+
+</div>
+
+<footer>
+  <p>Color Constraint Explorer &nbsp;·&nbsp; WCAG 2.1 / 色覚シミュレーション対応 &nbsp;·&nbsp; <a href="https://github.com/" target="_blank">GitHub</a></p>
+</footer>
+
+<script>
+const DEFS = { H:168, AH:348, MS:72, MV:42, AS:80, AV:34, Thr:3.0 };
+const BG = '#F0F7F5', W = '#FFFFFF';
+const RES_M = 50, RES_A = 50;
+
+const CLIST = [
+  { id:'c1', label:'メイン / 白 (AA)',     detail:'コントラスト比 ≥ 4.5' },
+  { id:'c2', label:'メイン / 背景 (AA)',   detail:'コントラスト比 ≥ 4.5' },
+  { id:'c3', label:'アクセント / 白 (AA)', detail:'コントラスト比 ≥ 4.5' },
+  { id:'c4', label:'メイン / アクセント',  detail:'コントラスト比 ≥ 3.0' },
+  { id:'c5', label:'第1色覚（赤弱）',      detail:'シミュレーション比 ≥ 閾値' },
+  { id:'c6', label:'第2色覚（緑弱）',      detail:'シミュレーション比 ≥ 閾値' },
+  { id:'c7', label:'第3色覚（青弱）',      detail:'シミュレーション比 ≥ 閾値' },
+  { id:'c8', label:'全色盲',              detail:'シミュレーション比 ≥ 閾値' },
+];
+
+// Build checkboxes
+const cboxes = document.getElementById('cboxes');
+CLIST.forEach(c => {
+  const lbl = document.createElement('label');
+  lbl.className = 'cbox-row';
+  lbl.innerHTML = `<input type="checkbox" id="${c.id}" checked>
+    <span class="clbl">${c.label}<span>${c.detail}</span></span>`;
+  cboxes.appendChild(lbl);
+});
+
+// ── Color math ──
+function hsv2rgb(h, s, v) {
+  s /= 100; v /= 100;
+  const f = n => { const k = (n + h / 60) % 6; return v - v * s * Math.max(0, Math.min(k, 4 - k, 1)); };
+  return [Math.round(f(5) * 255), Math.round(f(3) * 255), Math.round(f(1) * 255)];
+}
+function rgb2hex(r, g, b) { return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join(''); }
+function hex2rgb(hex) { return [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)); }
+function lum(r, g, b) {
+  return [r, g, b].reduce((a, c, i) => {
+    const s = c / 255;
+    return a + (s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)) * [0.2126, 0.7152, 0.0722][i];
+  }, 0);
+}
+function cratio(h1, h2) {
+  const [r1, g1, b1] = hex2rgb(h1), [r2, g2, b2] = hex2rgb(h2);
+  const l1 = lum(r1, g1, b1), l2 = lum(r2, g2, b2);
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
+function simCB(r, g, b, t) {
+  if (t === 0) return [Math.round(0.567*r+0.433*g), Math.round(0.558*r+0.442*g), Math.round(0.242*r+0.758*b)];
+  if (t === 1) return [Math.round(0.625*r+0.375*g), Math.round(0.7*r+0.3*g),   Math.round(0.3*g+0.7*b)];
+  if (t === 2) return [Math.round(0.95*r+0.05*b),  Math.round(0.433*g+0.567*b),Math.round(0.475*g+0.525*b)];
+  const l = Math.round(0.299*r + 0.587*g + 0.114*b); return [l, l, l];
+}
+
+// ── Getters ──
+function gv(id) { return +document.getElementById(id).value; }
+function getThr() { return Math.round(gv('slThr') * 10) / 10; }
+function getChecked() { return CLIST.map(c => document.getElementById(c.id).checked); }
+
+// ── Evaluate one point ──
+function evalPoint(mH, mS, mV, aH, aS, aV, checked, thr) {
+  const [mr, mg, mb] = hsv2rgb(mH, mS, mV);
+  const [ar, ag, ab] = hsv2rgb(aH, aS, aV);
+  const mHex = rgb2hex(mr, mg, mb), aHex = rgb2hex(ar, ag, ab);
+  const simData = [0, 1, 2, 3].map(t => {
+    const sm = simCB(mr, mg, mb, t), sa = simCB(ar, ag, ab, t);
+    return { smH: rgb2hex(...sm), saH: rgb2hex(...sa), ratio: cratio(rgb2hex(...sm), rgb2hex(...sa)) };
+  });
+  const scores = [
+    cratio(mHex, W) >= 4.5, cratio(mHex, BG) >= 4.5,
+    cratio(aHex, W) >= 4.5, cratio(mHex, aHex) >= 3.0,
+    ...simData.map(d => d.ratio >= thr),
+  ];
+  let pass = 0, total = 0;
+  checked.forEach((on, i) => { if (on) { total++; if (scores[i]) pass++; } });
+  return {
+    pass, total, scores, mHex, aHex, simData,
+    crMW: cratio(mHex, W), crMBG: cratio(mHex, BG),
+    crAW: cratio(aHex, W), crMA: cratio(mHex, aHex),
+  };
+}
+
+// ── Accent grid (fast, realtime) ──
+function buildAccentGrid(mH, mS, mV, aH, checked, thr) {
+  const grid = new Uint8Array(RES_A * RES_A);
+  let okCount = 0;
+  for (let si = 0; si < RES_A; si++) {
+    for (let vi = 0; vi < RES_A; vi++) {
+      const s = Math.round(si / (RES_A - 1) * 100);
+      const v = Math.round((1 - vi / (RES_A - 1)) * 100);
+      const { pass, total } = evalPoint(mH, mS, mV, aH, s, v, checked, thr);
+      const ok = total > 0 && pass === total;
+      grid[vi * RES_A + si] = ok ? 1 : 0;
+      if (ok) okCount++;
+    }
+  }
+  return { grid, okCount };
+}
+
+// ── Accent existence check (for main grid) ──
+function accentHasAny(mH, mS, mV, aH, checked, thr) {
+  for (let si = 0; si < RES_A; si++) {
+    for (let vi = 0; vi < RES_A; vi++) {
+      const s = Math.round(si / (RES_A - 1) * 100);
+      const v = Math.round((1 - vi / (RES_A - 1)) * 100);
+      const { pass, total } = evalPoint(mH, mS, mV, aH, s, v, checked, thr);
+      if (total > 0 && pass === total) return true;
+    }
+  }
+  return false;
+}
+
+// ── Main grid async ──
+let gridMData = null, calcRunning = false;
+
+function buildMainGridAsync(H, aH, checked, thr, onDone) {
+  if (calcRunning) return;
+  calcRunning = true;
+  const grid = new Uint8Array(RES_M * RES_M);
+  let okCount = 0, i = 0;
+  const total = RES_M * RES_M;
+  const btn = document.getElementById('calcBtn');
+  const status = document.getElementById('calcStatus');
+  btn.classList.add('running');
+  btn.textContent = '計算中...';
+  status.textContent = '0%';
+  function step() {
+    const end = Math.min(i + 5, total);
+    while (i < end) {
+      const si = i % RES_M, vi = Math.floor(i / RES_M);
+      const mS = Math.round(si / (RES_M - 1) * 100);
+      const mV = Math.round((1 - vi / (RES_M - 1)) * 100);
+      const ok = accentHasAny(H, mS, mV, aH, checked, thr);
+      grid[vi * RES_M + si] = ok ? 1 : 0;
+      if (ok) okCount++;
+      i++;
+    }
+    status.textContent = Math.round(i / total * 100) + '%';
+    if (i < total) {
+      requestAnimationFrame(step);
+    } else {
+      calcRunning = false;
+      btn.classList.remove('running');
+      btn.textContent = '再計算する';
+      status.textContent = '完了';
+      gridMData = { grid, okCount };
+      document.getElementById('mainStale').textContent = '';
+      onDone();
+    }
+  }
+  requestAnimationFrame(step);
+}
+
+// ── Draw map ──
+function drawMap(canvasId, grid, res, curS, curV) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const CW = canvas.width, CH = canvas.height;
+  const img = ctx.createImageData(CW, CH);
+  for (let py = 0; py < CH; py++) {
+    for (let px = 0; px < CW; px++) {
+      const si = Math.round(px / (CW - 1) * (res - 1));
+      const vi = Math.round(py / (CH - 1) * (res - 1));
+      const ok = grid[vi * res + si] === 1;
+      const idx = (py * CW + px) * 4;
+      img.data[idx]   = ok ? 26  : 221;
+      img.data[idx+1] = ok ? 138 : 221;
+      img.data[idx+2] = ok ? 114 : 221;
+      img.data[idx+3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  const cx = Math.round(curS / 100 * (CW - 1));
+  const cy = Math.round((1 - curV / 100) * (CH - 1));
+  ctx.beginPath(); ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fill();
+  ctx.strokeStyle = '#1a1917'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+  ctx.fillStyle = '#1a1917'; ctx.fill();
+}
+
+function drawEmptyMap(canvasId, curS, curV) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const CW = canvas.width, CH = canvas.height;
+  ctx.fillStyle = '#eceae6'; ctx.fillRect(0, 0, CW, CH);
+  ctx.fillStyle = '#a09e99';
+  ctx.font = '11px "DM Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('「計算する」を押してください', CW / 2, CH / 2);
+  const cx = Math.round(curS / 100 * (CW - 1));
+  const cy = Math.round((1 - curV / 100) * (CH - 1));
+  ctx.beginPath(); ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();
+  ctx.strokeStyle = '#888'; ctx.lineWidth = 2; ctx.stroke();
+}
+
+function drawHueBar(canvasId, selectedH) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  for (let x = 0; x < W; x++) {
+    const h = x / W * 360;
+    const [r, g, b] = hsv2rgb(h, 100, 100);
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.fillRect(x, 0, 1, H);
+  }
+  const cx = Math.round(selectedH / 360 * W);
+  ctx.strokeStyle = 'white'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke();
+  ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke();
+}
+
+function updateThrUI() {
+  const t = getThr();
+  document.getElementById('vThr').textContent = t.toFixed(1);
+  const map = { 10:'hint10', 30:'hint30', 45:'hint45', 70:'hint70' };
+  const key = Math.round(t * 10);
+  Object.values(map).forEach(id => document.getElementById(id).classList.remove('active'));
+  if (map[key]) document.getElementById(map[key]).classList.add('active');
+}
+
+function updateAccentMap() {
+  const H = gv('slH'), AH = gv('slAH'), MS = gv('slMS'), MV = gv('slMV'), thr = getThr();
+  const checked = getChecked();
+  const ra = buildAccentGrid(H, MS, MV, AH, checked, thr);
+  const pct = Math.round(ra.okCount / RES_A / RES_A * 100);
+  document.getElementById('accentOkBadge').innerHTML = ra.okCount > 0
+    ? `<span class="ok-badge">OK ${pct}%</span>`
+    : `<span class="ng-badge">OK 領域なし</span>`;
+  drawMap('mapA', ra.grid, RES_A, gv('slAS'), gv('slAV'));
+}
+
+function updateJudge() {
+  const H = gv('slH'), AH = gv('slAH'), MS = gv('slMS'), MV = gv('slMV');
+  const AS = gv('slAS'), AV = gv('slAV'), thr = getThr();
+  const checked = getChecked();
+  const totalChecked = checked.filter(Boolean).length;
+  const res = evalPoint(H, MS, MV, AH, AS, AV, checked, thr);
+  document.getElementById('swM').style.background = res.mHex;
+  document.getElementById('hexM').textContent = res.mHex.toUpperCase();
+  document.getElementById('swA').style.background = res.aHex;
+  document.getElementById('hexA').textContent = res.aHex.toUpperCase();
+
+  const allOk = totalChecked > 0 && res.pass === res.total;
+  const cls = allOk ? 'pass' : (res.pass > 0 && res.pass >= res.total * 0.75) ? 'warn' : 'fail';
+  function bw(v, t) { return v >= t ? 'pass' : v >= t * 0.75 ? 'warn' : 'fail'; }
+  const f2 = n => n.toFixed(2);
+  const simNames = ['第1色覚（赤弱）', '第2色覚（緑弱）', '第3色覚（青弱）', '全色盲'];
+  const simHtml = res.simData.map((d, i) => {
+    const ok = d.ratio >= thr;
+    return `<div class="sim-chip">
+      <div class="sim-lbl">${simNames[i]}${checked[4+i] ? '' : '&nbsp;*'}</div>
+      <div class="sim-dots">
+        <div class="sim-dot" style="background:${d.smH}"></div>
+        <div class="sim-dot" style="background:${d.saH}"></div>
+        <span class="badge ${ok ? 'pass' : 'fail'}" style="margin-left:4px;">${f2(d.ratio)}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('judgeCard').innerHTML = `
+    <div class="judge-overall">
+      <span class="badge judge-badge ${cls}" style="font-size:13px;padding:5px 18px;">
+        ${allOk ? '良好' : totalChecked === 0 ? '条件未選択' : res.pass + ' / ' + res.total + ' 条件クリア'}
+      </span>
+      <span class="judge-text">${allOk ? '選択した全条件をクリアしています' : totalChecked === 0 ? '' : res.total - res.pass + ' 件が未達です'}</span>
+    </div>
+    <div class="sub-label">コントラスト比</div>
+    <div class="detail-grid">
+      <div class="dc"><div class="dc-num">${f2(res.crMW)} <span class="badge ${bw(res.crMW,4.5)}">${res.crMW>=4.5?'AA':'NG'}</span></div><div class="dc-lbl">メイン / 白${checked[0]?'':' *'}</div></div>
+      <div class="dc"><div class="dc-num">${f2(res.crMBG)} <span class="badge ${bw(res.crMBG,4.5)}">${res.crMBG>=4.5?'AA':'NG'}</span></div><div class="dc-lbl">メイン / 背景${checked[1]?'':' *'}</div></div>
+      <div class="dc"><div class="dc-num">${f2(res.crAW)} <span class="badge ${bw(res.crAW,4.5)}">${res.crAW>=4.5?'AA':'NG'}</span></div><div class="dc-lbl">アクセント / 白${checked[2]?'':' *'}</div></div>
+      <div class="dc"><div class="dc-num">${f2(res.crMA)} <span class="badge ${bw(res.crMA,3)}">${res.crMA>=3?'OK':'NG'}</span></div><div class="dc-lbl">メイン / アクセント${checked[3]?'':' *'}</div></div>
+    </div>
+    <div class="sub-label" style="margin-top:14px;">色覚シミュレーション比 <span style="font-size:10px;font-weight:400;">(閾値: ${thr.toFixed(1)})</span></div>
+    <div class="sim-grid">${simHtml}</div>
+    <div class="note">* = 制約条件から除外中（判定に影響しない）</div>
+  `;
+}
+
+function markStale() {
+  gridMData = null;
+  document.getElementById('mainStale').textContent = '※ H・条件・閾値が変わりました。再計算してください。';
+  document.getElementById('mainOkBadge').innerHTML = '<span class="pending-badge">要再計算</span>';
+  document.getElementById('calcBtn').textContent = '再計算する';
+  document.getElementById('calcStatus').textContent = '';
+}
+
+function update() {
+  document.getElementById('vH').textContent  = gv('slH');
+  document.getElementById('vAH').textContent = gv('slAH');
+  document.getElementById('vMS').textContent = gv('slMS');
+  document.getElementById('vMV').textContent = gv('slMV');
+  document.getElementById('vAS').textContent = gv('slAS');
+  document.getElementById('vAV').textContent = gv('slAV');
+  updateThrUI();
+  drawHueBar('hueBarM', gv('slH'));
+  drawHueBar('hueBarA', gv('slAH'));
+  updateAccentMap();
+  updateJudge();
+  if (gridMData) drawMap('mapM', gridMData.grid, RES_M, gv('slMS'), gv('slMV'));
+  else drawEmptyMap('mapM', gv('slMS'), gv('slMV'));
+}
+
+// ── Calc button ──
+document.getElementById('calcBtn').addEventListener('click', () => {
+  if (calcRunning) return;
+  gridMData = null;
+  buildMainGridAsync(gv('slH'), gv('slAH'), getChecked(), getThr(), () => {
+    const pct = Math.round(gridMData.okCount / RES_M / RES_M * 100);
+    document.getElementById('mainOkBadge').innerHTML = gridMData.okCount > 0
+      ? `<span class="ok-badge">OK ${pct}%</span>`
+      : `<span class="ng-badge">OK 領域なし</span>`;
+    drawMap('mapM', gridMData.grid, RES_M, gv('slMS'), gv('slMV'));
+  });
+});
+
+document.getElementById('setCompBtn').addEventListener('click', () => {
+  document.getElementById('slAH').value = (gv('slH') + 180) % 360;
+  markStale(); update();
+});
+
+// ── Hold buttons ──
+function setupHold(btnId, sliderId, dir, cb, stepSize) {
+  const btn = document.getElementById(btnId), sl = document.getElementById(sliderId);
+  const s = stepSize || 1;
+  let raf = null, to = null;
+  function tick() {
+    sl.value = Math.max(+sl.min, Math.min(+sl.max, Math.round((+sl.value + s * dir) * 10) / 10));
+    cb(); raf = requestAnimationFrame(tick);
+  }
+  function start(e) {
+    e.preventDefault();
+    sl.value = Math.max(+sl.min, Math.min(+sl.max, Math.round((+sl.value + s * dir) * 10) / 10));
+    cb(); to = setTimeout(() => { raf = requestAnimationFrame(tick); }, 400);
+  }
+  function stop() { clearTimeout(to); if (raf) { cancelAnimationFrame(raf); raf = null; } }
+  btn.addEventListener('mousedown', start);
+  btn.addEventListener('touchstart', start, { passive: false });
+  document.addEventListener('mouseup', stop);
+  document.addEventListener('touchend', stop);
+}
+
+// ── Map drag ──
+function setupMapDrag(canvasId, sId, vId, cb) {
+  const canvas = document.getElementById(canvasId);
+  let dragging = false;
+  function pos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      s: Math.round(Math.max(0, Math.min(1, (cx - rect.left) / rect.width)) * 100),
+      v: Math.round(Math.max(0, Math.min(1, 1 - (cy - rect.top) / rect.height)) * 100),
+    };
+  }
+  function apply(e) { e.preventDefault(); const { s, v } = pos(e); document.getElementById(sId).value = s; document.getElementById(vId).value = v; cb(); }
+  canvas.addEventListener('mousedown',  e => { dragging = true; apply(e); });
+  canvas.addEventListener('mousemove',  e => { if (dragging) apply(e); });
+  canvas.addEventListener('touchstart', e => { dragging = true; apply(e); }, { passive: false });
+  canvas.addEventListener('touchmove',  e => { if (dragging) apply(e); }, { passive: false });
+  canvas.addEventListener('touchend',   () => { dragging = false; });
+  document.addEventListener('mouseup',  () => { dragging = false; });
+}
+
+// ── Wire up all controls ──
+const staleUpdate = () => { markStale(); update(); };
+
+setupHold('bHm',  'slH',  -1, staleUpdate);
+setupHold('bHp',  'slH',   1, staleUpdate);
+setupHold('bAHm', 'slAH', -1, staleUpdate);
+setupHold('bAHp', 'slAH',  1, staleUpdate);
+setupHold('bMSm', 'slMS', -1, update);
+setupHold('bMSp', 'slMS',  1, update);
+setupHold('bMVm', 'slMV', -1, update);
+setupHold('bMVp', 'slMV',  1, update);
+setupHold('bASm', 'slAS', -1, update);
+setupHold('bASp', 'slAS',  1, update);
+setupHold('bAVm', 'slAV', -1, update);
+setupHold('bAVp', 'slAV',  1, update);
+setupHold('bThrm','slThr',-1, staleUpdate, 0.1);
+setupHold('bThrp','slThr', 1, staleUpdate, 0.1);
+
+document.getElementById('slH').addEventListener('input',   staleUpdate);
+document.getElementById('slAH').addEventListener('input',  staleUpdate);
+document.getElementById('slThr').addEventListener('input', staleUpdate);
+['slMS','slMV','slAS','slAV'].forEach(id => document.getElementById(id).addEventListener('input', update));
+
+document.getElementById('rH').addEventListener('click',   () => { document.getElementById('slH').value  = DEFS.H;   staleUpdate(); });
+document.getElementById('rAH').addEventListener('click',  () => { document.getElementById('slAH').value = DEFS.AH;  staleUpdate(); });
+document.getElementById('rThr').addEventListener('click', () => { document.getElementById('slThr').value = DEFS.Thr; staleUpdate(); });
+document.getElementById('rM').addEventListener('click',   () => { document.getElementById('slMS').value = DEFS.MS; document.getElementById('slMV').value = DEFS.MV; update(); });
+document.getElementById('rA').addEventListener('click',   () => { document.getElementById('slAS').value = DEFS.AS; document.getElementById('slAV').value = DEFS.AV; update(); });
+
+CLIST.forEach(c => document.getElementById(c.id).addEventListener('change', staleUpdate));
+
+setupMapDrag('mapM', 'slMS', 'slMV', update);
+setupMapDrag('mapA', 'slAS', 'slAV', update);
+
+// ── Init ──
+drawEmptyMap('mapM', DEFS.MS, DEFS.MV);
+update();
+</script>
+</body>
+</html>
