@@ -692,12 +692,8 @@ footer a { color: var(--text3); }
   #headerLangBtn,
   #darkModeBtn,
   .header-tag { display: none; }
-  #calcBtnArea { display: none; }
   #settingsBtn { width: 33px; height: 33px; }
   #settingsBtn svg { width: 20px; height: 20px; }
-}
-@media (min-width: 601px) {
-  #calcBtnAreaMobile { display: none; }
 }
 </style>
 </head>
@@ -926,12 +922,6 @@ footer a { color: var(--text3); }
         <div class="hexlbl" id="hexA"></div>
       </div>
     </div>
-  </div>
-
-  <!-- Calc button (PC) -->
-  <div id="calcBtnArea" style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-    <button class="calc-btn" id="calcBtn"></button>
-    <span class="calc-status" id="calcStatus"></span>
   </div>
 
   <div class="divider"></div>
@@ -1507,7 +1497,6 @@ function doCalc() {
     updateCursor('mapM', gv('slMS'), gv('slMV'));
   });
 }
-document.getElementById('calcBtn').addEventListener('click', doCalc);
 document.getElementById('calcBtnM').addEventListener('click', doCalc);
 
 document.getElementById('setCompBtn').addEventListener('click', () => {
