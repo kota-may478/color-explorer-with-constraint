@@ -374,7 +374,26 @@ input[type=range]::-moz-range-thumb {
   width: 36px;
   text-align: right;
   flex-shrink: 0;
+  cursor: pointer;
 }
+.sval:hover { color: var(--accent); text-decoration: underline; text-decoration-style: dashed; }
+.sval-input {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  width: 48px;
+  text-align: right;
+  flex-shrink: 0;
+  background: var(--surface2);
+  border: 1px solid var(--ok-mid);
+  border-radius: var(--radius-sm);
+  padding: 0 3px;
+  outline: none;
+  -moz-appearance: textfield;
+}
+.sval-input::-webkit-inner-spin-button,
+.sval-input::-webkit-outer-spin-button { -webkit-appearance: none; }
 .sb {
   width: 26px; height: 26px;
   border-radius: var(--radius-sm);
@@ -1556,6 +1575,49 @@ function setupMapDrag(canvasId, sId, vId, cb) {
   document.addEventListener('mouseup',  () => { dragging = false; });
 }
 
+// ── Inline direct input ──
+function setupInlineInput(svalId, sliderId, updateFn) {
+  const span = document.getElementById(svalId);
+  const slider = document.getElementById(sliderId);
+  span.addEventListener('click', () => {
+    if (document.querySelector('.sval-input')) return; // one at a time
+    const min = parseFloat(slider.min);
+    const max = parseFloat(slider.max);
+    const step = parseFloat(slider.step);
+    const isDecimal = step < 1;
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.className = 'sval-input';
+    input.value = span.textContent.trim();
+    input.min = min; input.max = max; input.step = step;
+    span.style.display = 'none';
+    span.parentNode.insertBefore(input, span);
+    input.focus(); input.select();
+    let committed = false;
+    function commit() {
+      if (committed) return; committed = true;
+      let val = parseFloat(input.value);
+      if (isNaN(val)) val = parseFloat(span.textContent.trim());
+      val = Math.max(min, Math.min(max, val));
+      if (isDecimal) val = parseFloat((Math.round(val / step) * step).toFixed(1));
+      else val = Math.round(val);
+      slider.value = val;
+      if (input.parentNode) input.parentNode.removeChild(input);
+      span.style.display = '';
+      updateFn();
+    }
+    function cancel() {
+      if (input.parentNode) input.parentNode.removeChild(input);
+      span.style.display = '';
+    }
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); input.removeEventListener('blur', commit); commit(); }
+      if (e.key === 'Escape') { e.preventDefault(); input.removeEventListener('blur', commit); cancel(); }
+    });
+  });
+}
+
 // ── Wire up controls ──
 const staleUpdate = () => { markStale(); update(); };
 
@@ -1573,6 +1635,14 @@ setupHold('bAVm', 'slAV', -1, update);
 setupHold('bAVp', 'slAV',  1, update);
 setupHold('bThrm','slThr',-1, staleUpdate, 0.1);
 setupHold('bThrp','slThr', 1, staleUpdate, 0.1);
+
+setupInlineInput('vH',   'slH',   staleUpdate);
+setupInlineInput('vAH',  'slAH',  staleUpdate);
+setupInlineInput('vMS',  'slMS',  update);
+setupInlineInput('vMV',  'slMV',  update);
+setupInlineInput('vAS',  'slAS',  update);
+setupInlineInput('vAV',  'slAV',  update);
+setupInlineInput('vThr', 'slThr', staleUpdate);
 
 document.getElementById('slH').addEventListener('input',   staleUpdate);
 document.getElementById('slAH').addEventListener('input',  staleUpdate);
