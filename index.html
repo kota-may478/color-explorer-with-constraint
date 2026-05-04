@@ -520,9 +520,10 @@ input[type=range]::-moz-range-thumb {
   background: var(--surface2);
   color: var(--text3);
   border: 1px solid transparent;
-  cursor: default;
+  cursor: pointer;
   transition: all .15s;
 }
+.thr-hint:hover { background: var(--surface3); color: var(--text2); }
 .thr-hint.active { background: var(--ok-bg); color: var(--ok); border-color: rgba(26,134,114,.3); }
 
 /* ── Hue bar ── */
@@ -686,11 +687,15 @@ footer {
 }
 footer a { color: var(--text3); }
 
-/* ── Mobile: hide lang / dark-mode / version in header ── */
+/* ── Mobile: hide lang / dark-mode / version in header; PC calc btn ── */
 @media (max-width: 600px) {
   #headerLangBtn,
   #darkModeBtn,
   .header-tag { display: none; }
+  #calcBtnArea { display: none; }
+}
+@media (min-width: 601px) {
+  #calcBtnAreaMobile { display: none; }
 }
 </style>
 </head>
@@ -778,10 +783,10 @@ footer a { color: var(--text3); }
         <button class="rb" id="rThr" title="Reset">&#8635;</button>
       </div>
       <div class="thr-hints">
-        <span class="thr-hint" id="hint10"></span>
-        <span class="thr-hint" id="hint30"></span>
-        <span class="thr-hint" id="hint45"></span>
-        <span class="thr-hint" id="hint70"></span>
+        <button class="thr-hint" id="hint10"></button>
+        <button class="thr-hint" id="hint30"></button>
+        <button class="thr-hint" id="hint45"></button>
+        <button class="thr-hint" id="hint70"></button>
       </div>
     </div>
   </div>
@@ -869,6 +874,10 @@ footer a { color: var(--text3); }
         <div class="hexlbl" id="hexM"></div>
       </div>
       <div class="map-hint-box" id="mapMHintBox"></div>
+      <div id="calcBtnAreaMobile" style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:12px;margin-bottom:4px;">
+        <button class="calc-btn" id="calcBtnM"></button>
+        <span class="calc-status" id="calcStatusM"></span>
+      </div>
     </div>
 
     <!-- Accent SV -->
@@ -918,8 +927,8 @@ footer a { color: var(--text3); }
     </div>
   </div>
 
-  <!-- Calc button -->
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+  <!-- Calc button (PC) -->
+  <div id="calcBtnArea" style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
     <button class="calc-btn" id="calcBtn"></button>
     <span class="calc-status" id="calcStatus"></span>
   </div>
@@ -1005,7 +1014,7 @@ const I18N = {
   },
   ja: {
     heroTitle: '配色設計ツール',
-    heroDesc: 'WCAG コントラスト比・色覚シミュレーションの制約条件を満たすカラーパレットを、S-V マップ上で視覚的に探索できます。メインカラーの H を固定し、制約を満たすアクセントカラーの有効領域を確認しながら色を決めてください。',
+    heroDesc: 'WCAGコントラスト比・色覚シミュレーションの制約条件を満たすカラーパレットを、S-V マップ上で視覚的に探索できます。メインカラーの H を固定し、制約を満たすアクセントカラーの有効領域を確認しながら色を決めてください。',
     labelConstraints: '制約条件の選択',
     thrTitle: '色覚シミュレーション 識別閾値',
     thrDesc: 'c5〜c8 の条件に適用 — この値以上のコントラスト比を「識別可」とします',
@@ -1147,11 +1156,11 @@ function applyLang() {
   document.getElementById('mapMHintBox').textContent = t.mapHint;
   // calc btn text based on state
   if (!calcRunning && !gridMData) {
-    document.getElementById('calcBtn').textContent = t.calcBtn;
+    setCalcBtnText(t.calcBtn);
   } else if (calcRunning) {
-    document.getElementById('calcBtn').textContent = t.calcRunning;
+    setCalcBtnText(t.calcRunning);
   } else {
-    document.getElementById('calcBtn').textContent = t.recalcBtn;
+    setCalcBtnText(t.recalcBtn);
   }
   // rebuild checkboxes (preserve checked state)
   const prevChecked = {};
@@ -1280,17 +1289,26 @@ function accentHasAny(mH, mS, mV, aH, checked, thr) {
 // ── Main grid async ──
 let gridMData = null, calcRunning = false;
 
+// ── Calc button helpers (sync PC + mobile) ──
+function setCalcBtnText(text) {
+  ['calcBtn', 'calcBtnM'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = text; });
+}
+function setCalcBtnClass(add, remove) {
+  ['calcBtn', 'calcBtnM'].forEach(id => { const el = document.getElementById(id); if (el) { if (add) el.classList.add(add); if (remove) el.classList.remove(remove); } });
+}
+function setCalcStatusText(text) {
+  ['calcStatus', 'calcStatusM'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = text; });
+}
+
 function buildMainGridAsync(H, aH, checked, thr, onDone) {
   if (calcRunning) return;
   calcRunning = true;
   const grid = new Uint8Array(RES_M * RES_M);
   let okCount = 0, i = 0;
   const total = RES_M * RES_M;
-  const btn = document.getElementById('calcBtn');
-  const status = document.getElementById('calcStatus');
-  btn.classList.add('running');
-  btn.textContent = I18N[lang].calcRunning;
-  status.textContent = '0%';
+  setCalcBtnClass('running', null);
+  setCalcBtnText(I18N[lang].calcRunning);
+  setCalcStatusText('0%');
   function step() {
     const end = Math.min(i + 5, total);
     while (i < end) {
@@ -1302,14 +1320,14 @@ function buildMainGridAsync(H, aH, checked, thr, onDone) {
       if (ok) okCount++;
       i++;
     }
-    status.textContent = Math.round(i / total * 100) + '%';
+    setCalcStatusText(Math.round(i / total * 100) + '%');
     if (i < total) {
       requestAnimationFrame(step);
     } else {
       calcRunning = false;
-      btn.classList.remove('running');
-      btn.textContent = I18N[lang].recalcBtn;
-      status.textContent = I18N[lang].calcDone;
+      setCalcBtnClass(null, 'running');
+      setCalcBtnText(I18N[lang].recalcBtn);
+      setCalcStatusText(I18N[lang].calcDone);
       gridMData = { grid, okCount };
       document.getElementById('mainStale').textContent = '';
       document.getElementById('mapMHintBox').classList.add('hidden');
@@ -1450,8 +1468,8 @@ function markStale() {
   gridMData = null;
   document.getElementById('mainStale').textContent = I18N[lang].staleMsg;
   document.getElementById('mainOkBadge').innerHTML = `<span class="pending-badge">${I18N[lang].needRecalc}</span>`;
-  document.getElementById('calcBtn').textContent = I18N[lang].recalcBtn;
-  document.getElementById('calcStatus').textContent = '';
+  setCalcBtnText(I18N[lang].recalcBtn);
+  setCalcStatusText('');
   document.getElementById('mapMHintBox').classList.remove('hidden');
 }
 
@@ -1473,7 +1491,7 @@ function update() {
 }
 
 // ── Calc button ──
-document.getElementById('calcBtn').addEventListener('click', () => {
+function doCalc() {
   if (calcRunning) return;
   gridMData = null;
   buildMainGridAsync(gv('slH'), gv('slAH'), getChecked(), getThr(), () => {
@@ -1484,11 +1502,21 @@ document.getElementById('calcBtn').addEventListener('click', () => {
     drawMap('mapM', gridMData.grid, RES_M, gv('slMS'), gv('slMV'));
     updateCursor('mapM', gv('slMS'), gv('slMV'));
   });
-});
+}
+document.getElementById('calcBtn').addEventListener('click', doCalc);
+document.getElementById('calcBtnM').addEventListener('click', doCalc);
 
 document.getElementById('setCompBtn').addEventListener('click', () => {
   document.getElementById('slAH').value = (gv('slH') + 180) % 360;
   markStale(); update();
+});
+
+// ── Threshold hint buttons ──
+[['hint10', 1.0], ['hint30', 3.0], ['hint45', 4.5], ['hint70', 7.0]].forEach(([id, val]) => {
+  document.getElementById(id).addEventListener('click', () => {
+    document.getElementById('slThr').value = val;
+    staleUpdate();
+  });
 });
 
 // ── Hold buttons ──
