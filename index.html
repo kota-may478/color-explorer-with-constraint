@@ -952,7 +952,7 @@ footer a { color: var(--text3); }
 </div>
 
 <footer>
-  <p>Color Explorer with Constraint &nbsp;·&nbsp; WCAG 2.1 / Color Vision Simulation &nbsp;·&nbsp; <a href="https://github.com/kota-may478/color-explorer-with-constraint" target="_blank">GitHub</a> &nbsp;·&nbsp; v1.0</p>
+  <p>Color Explorer with Constraint &nbsp;·&nbsp; WCAG 2.1 / Color Vision Simulation &nbsp;·&nbsp; <a href="https://github.com/kota-may478/color-explorer-with-constraint" target="_blank" rel="noopener noreferrer">GitHub</a> &nbsp;·&nbsp; v1.0</p>
 </footer>
 
 <script>
@@ -1108,9 +1108,10 @@ try { isDark = localStorage.getItem('cec_dark') === '1'; } catch(e){}
 
 let customLightBg = DEFAULT_LIGHT_BG;
 let customDarkBg  = DEFAULT_DARK_BG;
+const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 try {
-  const lb = localStorage.getItem('cec_light_bg'); if (lb) customLightBg = lb;
-  const db = localStorage.getItem('cec_dark_bg');  if (db) customDarkBg  = db;
+  const lb = localStorage.getItem('cec_light_bg'); if (lb && HEX_COLOR_RE.test(lb)) customLightBg = lb;
+  const db = localStorage.getItem('cec_dark_bg');  if (db && HEX_COLOR_RE.test(db)) customDarkBg  = db;
 } catch(e){}
 
 // ══════════════════════════════════════════════
