@@ -653,12 +653,12 @@ canvas.map {
 }
 .judge-text { font-size: 13px; color: var(--text2); }
 .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 8px; }
-.dc { border-radius: var(--radius-sm); padding: 8px 10px; border: 1px solid var(--border); }
+.dc { border-radius: var(--radius-sm); padding: 8px 10px; border: 1px solid var(--border); position: relative; }
 .dc-num { font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--text); }
 .dc-lbl { font-size: 10px; color: var(--text2); margin-top: 3px; }
 .sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 8px; }
 @media (max-width: 480px) { .sim-grid { grid-template-columns: 1fr; } }
-.sim-chip { border-radius: var(--radius-sm); padding: 8px 10px; border: 1px solid var(--border); }
+.sim-chip { border-radius: var(--radius-sm); padding: 8px 10px; border: 1px solid var(--border); position: relative; }
 .sim-lbl { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-bottom: 5px; }
 .sim-dots { display: flex; gap: 6px; align-items: center; }
 .sim-dot { width: 20px; height: 20px; border-radius: 4px; flex-shrink: 0; border: 1px solid var(--border2); }
@@ -671,7 +671,7 @@ canvas.map {
   color: var(--text3);
   margin: 14px 0 6px;
 }
-.note { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 8px; }
+.excluded-mask { position: absolute; inset: 0; border-radius: var(--radius-sm); background: rgba(50,50,50,0.3); pointer-events: none; }
 
 /* ── Divider ── */
 .divider { height: 1px; background: var(--border2); margin: 20px 0; }
@@ -943,17 +943,17 @@ footer a { color: var(--text3); }
 const I18N = {
   en: {
     heroTitle: 'Color Palette Design Tool',
-    heroDesc: 'Visually explore color palettes that satisfy WCAG contrast ratio and color vision simulation constraints on the S-V map. Fix the main color hue, then find valid accent colors within the constraint-satisfying regions.',
+    heroDesc: 'Visually explore color palettes that satisfy WCAG contrast ratio and color vision simulation constraints on the S-V map. Fix the main and accent color hues, then find valid accent colors within the constraint-satisfying regions.',
     labelConstraints: 'Constraint conditions',
     thrTitle: 'Color vision simulation — discrimination threshold',
-    thrDesc: 'Applied to c5–c8: contrast ratio above this value is treated as "distinguishable"',
+    thrDesc: 'Applied to color vision simulation conditions: contrast ratio above this value is treated as "distinguishable"',
     hint10: '1.0 No limit',
     hint30: '3.0 WCAG AA Large (rec.)',
     hint45: '4.5 WCAG AA',
     hint70: '7.0 WCAG AAA',
     step1Title: 'Choose H (hue) for main color',
     step2Title: 'Choose H (hue) for accent color',
-    step2Note: 'Default is complementary (+180°). You can freely adjust it.',
+    step2Note: 'Default is complementary (+180°).',
     setComp: 'Set complementary',
     step3Title: 'Choose S and V for main color',
     step4Title: 'Choose S and V for accent color',
@@ -980,7 +980,7 @@ const I18N = {
     threshold: 'Threshold',
     excludedNote: '* = excluded from constraint (does not affect result)',
     okRegionNone: 'No OK region',
-    mapHint: 'Move the point to find (S, V) combinations satisfying the conditions.\nClick "Calculate main map" to display the region of main (S, V) values that have valid accent solutions.',
+    mapHint: 'Move the main color point to display the accent color (S, V) region (OK region) satisfying the constraints for the current main color (H, S, V).\nClick "Calculate main map" to display the region of main (S, V) values where valid accent color (S, V) solutions exist at the current H.',
     judgeGood: 'Good',
     clist: [
       { id:'c1', label:'Main / White (AA)',        detail:'Contrast ratio ≥ 4.5' },
@@ -1005,26 +1005,26 @@ const I18N = {
   },
   ja: {
     heroTitle: '配色設計ツール',
-    heroDesc: 'WCAGコントラスト比・色覚シミュレーションの制約条件を満たすカラーパレットを、S-V マップ上で視覚的に探索できます。メインカラーの H を固定し、制約を満たすアクセントカラーの有効領域を確認しながら色を決めてください。',
+    heroDesc: 'WCAGコントラスト比・色覚シミュレーションの制約条件を満たすカラーパレットを、S-Vマップ上で視覚的に探索できます。メインカラーとアクセントカラーのHを固定し、制約を満たすアクセントカラーの有効領域を確認しながら色を決めてください。',
     labelConstraints: '制約条件の選択',
     thrTitle: '色覚シミュレーション 識別閾値',
-    thrDesc: 'c5〜c8 の条件に適用 — この値以上のコントラスト比を「識別可」とします',
+    thrDesc: '色覚の条件に適用 — この値以上のコントラスト比を「識別可」とします',
     hint10: '1.0 制限なし',
     hint30: '3.0 WCAG AA大 (推奨)',
     hint45: '4.5 WCAG AA',
     hint70: '7.0 WCAG AAA',
     step1Title: 'メインカラーの H（色相）を決める',
     step2Title: 'アクセントカラーの H（色相）を決める',
-    step2Note: 'デフォルトは補色（+180°）。自由に変更できます。',
+    step2Note: 'デフォルトは補色（+180°）。',
     setComp: '補色に設定',
     step3Title: 'メインカラー S・V を決める',
     step4Title: 'アクセントカラー S・V を決める',
     mapMNote1: 'ドラッグ / クリックで選択',
-    mapMNote2: 'OK = 制約を満たすアクセント (S,V) が存在する',
+    mapMNote2: 'OK = 制約を満たすアクセント(S,V)が存在する',
     mapANote1: '緑の領域内に点を置くと全条件クリア',
-    mapANote2: '現在のメイン(S,V)・アクセントH に対してリアルタイム更新',
+    mapANote2: '現在のメイン(S,V)・アクセントHに対してリアルタイム更新',
     legendMOk: 'OK（アクセント解あり）',
-    legendAOk: '全条件 OK',
+    legendAOk: '全条件OK',
     legendNG: 'NG',
     pendingM: '未計算',
     staleMsg: '※ H・条件・閾値が変わりました。再計算してください。',
@@ -1042,7 +1042,7 @@ const I18N = {
     threshold: '閾値',
     excludedNote: '* = 制約条件から除外中（判定に影響しない）',
     okRegionNone: 'OK 領域なし',
-    mapHint: '点を移動させると、条件を満たす (S, V) の組を見つけられます。\n「メインマップを計算する」のボタンを押すと、解が存在するメイン (S, V) の領域を表示できます。',
+    mapHint: 'メインカラーの点を移動させると、そのメインカラーの(H, S, V)に対して制約条件を満たすアクセントカラーの(S, V)の組がOK領域として表示されます。\n「メインマップを計算する」のボタンを押すと、現状のHにおいてアクセントカラーの(S, V)の組に解が存在するメイン(S, V)の領域を表示できます。',
     judgeGood: '良好',
     clist: [
       { id:'c1', label:'メイン / 白 (AA)',     detail:'コントラスト比 ≥ 4.5' },
@@ -1426,13 +1426,15 @@ function updateJudge() {
 
   const simHtml = res.simData.map((d, i) => {
     const ok = d.ratio >= thr;
+    const excl = !checked[4+i];
     return `<div class="sim-chip">
-      <div class="sim-lbl">${t.simNames[i]}${checked[4+i] ? '' : '&nbsp;*'}</div>
+      <div class="sim-lbl">${t.simNames[i]}</div>
       <div class="sim-dots">
         <div class="sim-dot" style="background:${d.smH}"></div>
         <div class="sim-dot" style="background:${d.saH}"></div>
         <span class="badge ${ok ? 'pass' : 'fail'}" style="margin-left:4px;">${f2(d.ratio)}</span>
       </div>
+      ${excl ? '<div class="excluded-mask"></div>' : ''}
     </div>`;
   }).join('');
 
@@ -1440,7 +1442,7 @@ function updateJudge() {
   const crThrs = [4.5, 4.5, 4.5, 3.0];
   const dcHtml = crVals.map((v, i) =>
     `<div class="dc"><div class="dc-num">${f2(v)} <span class="badge ${bw(v, crThrs[i])}">${v >= crThrs[i] ? 'OK' : 'NG'}</span></div>
-    <div class="dc-lbl">${t.dcLabels[i]}${checked[i] ? '' : ' *'}</div></div>`
+    <div class="dc-lbl">${t.dcLabels[i]}</div>${checked[i] ? '' : '<div class="excluded-mask"></div>'}</div>`
   ).join('');
 
   document.getElementById('judgeCard').innerHTML = `
@@ -1454,7 +1456,6 @@ function updateJudge() {
     <div class="detail-grid">${dcHtml}</div>
     <div class="sub-label" style="margin-top:14px;">${t.subSim} <span style="font-size:10px;font-weight:400;">(${t.threshold}: ${thr.toFixed(1)})</span></div>
     <div class="sim-grid">${simHtml}</div>
-    <div class="note">${t.excludedNote}</div>
   `;
 }
 
