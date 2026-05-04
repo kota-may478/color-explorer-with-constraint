@@ -685,6 +685,13 @@ footer {
   border-top: 1px solid var(--border2);
 }
 footer a { color: var(--text3); }
+
+/* ── Mobile: hide lang / dark-mode / version in header ── */
+@media (max-width: 600px) {
+  #headerLangBtn,
+  #darkModeBtn,
+  .header-tag { display: none; }
+}
 </style>
 </head>
 <body>
@@ -808,9 +815,11 @@ footer a { color: var(--text3); }
       <button class="sb" id="bAHp">&#8594;</button>
       <span class="sval" id="vAH">348</span>
       <button class="rb" id="rAH" title="Reset">&#8635;</button>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <span style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="step2Note"></span>
       <button class="link-btn" id="setCompBtn"></button>
     </div>
-    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="step2Note"></div>
   </div>
 
   <!-- Step 3 & 4: S-V maps -->
@@ -854,6 +863,7 @@ footer a { color: var(--text3); }
           <input type="range" id="slMV" min="0" max="100" value="42" step="1">
           <button class="sb" id="bMVp">&#8594;</button>
           <span class="sval" id="vMV">42</span>
+          <span style="width:26px;flex-shrink:0;display:inline-block;"></span>
         </div>
         <div class="swatch" id="swM"></div>
         <div class="hexlbl" id="hexM"></div>
@@ -900,6 +910,7 @@ footer a { color: var(--text3); }
           <input type="range" id="slAV" min="0" max="100" value="34" step="1">
           <button class="sb" id="bAVp">&#8594;</button>
           <span class="sval" id="vAV">34</span>
+          <span style="width:26px;flex-shrink:0;display:inline-block;"></span>
         </div>
         <div class="swatch" id="swA"></div>
         <div class="hexlbl" id="hexA"></div>
@@ -922,7 +933,7 @@ footer a { color: var(--text3); }
 </div>
 
 <footer>
-  <p>Color Explorer with Constraint &nbsp;·&nbsp; WCAG 2.1 / Color Vision Simulation &nbsp;·&nbsp; <a href="https://github.com/kota-may478/color-explorer-with-constraint" target="_blank">GitHub</a></p>
+  <p>Color Explorer with Constraint &nbsp;·&nbsp; WCAG 2.1 / Color Vision Simulation &nbsp;·&nbsp; <a href="https://github.com/kota-may478/color-explorer-with-constraint" target="_blank">GitHub</a> &nbsp;·&nbsp; v1.0</p>
 </footer>
 
 <script>
